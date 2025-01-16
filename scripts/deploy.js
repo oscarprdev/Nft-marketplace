@@ -1,7 +1,7 @@
-const hre = require("hardhat");
+import { ethers } from "hardhat";
 
 async function main() {
-  const Lock = await hre.ethers.getContractFactory("Lock");
+  const Lock = await ethers.getContractFactory("Lock");
   const lock = await Lock.deploy();
 
   await lock.deployed();
