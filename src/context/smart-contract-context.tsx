@@ -80,7 +80,7 @@ export const SmartContractProvider = ({ children }: { children: React.ReactNode 
     try {
       if (!window.ethereum) return console.log('No metamask connected');
 
-      const accounts = await window.ethereum.request({ method: 'eth_requestAccount' });
+      const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
 
       setCurrentAccount(accounts[0]);
     } catch (error) {
