@@ -82,6 +82,7 @@ export const SmartContractProvider = ({ children }: { children: React.ReactNode 
 
       const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
 
+      console.log({ accounts });
       setCurrentAccount(accounts[0]);
     } catch (error) {
       console.log(`Something went wrong connecting to wallet ${error}`);
@@ -118,6 +119,8 @@ export const SmartContractProvider = ({ children }: { children: React.ReactNode 
         : await contract.reSellToken(url, ethPrice, { value: listingPrice.toString() });
 
       await transaction.wait();
+
+      console.log(listingPrice);
     } catch (error) {
       console.log(`Something went wrong creating sale ${error}`);
     }

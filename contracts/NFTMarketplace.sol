@@ -39,15 +39,15 @@ contract NFTMarketplace is ERC721URIStorage {
     }
 
     constructor() ERC721("NFT Marketplace", "NFTM") {
-        owner == payable(msg.sender);
+        owner = payable(msg.sender);
     }
 
-    function updateListingPrice(uint256 _listingPrice) public payable {
+    function updateListingPrice(uint256 _listingPrice) public payable onlyOwner {
         listingPrice = _listingPrice;
     }
 
-    function getListingPrice() public view returns (uint256) {
-        return listingPrice;
+    function getListingPrice() public pure returns (uint256) {
+        return 0.0015 ether;
     }
 
     function createToken(string memory tokenURI, uint256 price) public payable returns (uint256) {
@@ -101,7 +101,6 @@ contract NFTMarketplace is ERC721URIStorage {
 
         idToMarketItem[tokenId].owner = payable(msg.sender);
         idToMarketItem[tokenId].sold = true;
-        idToMarketItem[tokenId].owner = payable(address(0));
 
         _itemsSold = _itemsSold + 1;
 
