@@ -1,15 +1,11 @@
 'use client';
 
 import { NFTMarketplaceABI, NFTMarketplaceAddress } from '../constants';
-import { json } from '@helia/json';
-import { unixfs } from '@helia/unixfs';
 import { ethers } from 'ethers';
-import { createHelia } from 'helia';
-import { CID } from 'multiformats/cid';
 import React, { createContext, useState } from 'react';
 import Web3Modal from 'web3modal';
 
-const fetchContract = (signerOrProvider: ethers.JsonRpcSigner) =>
+const fetchContract = (signerOrProvider: ethers.JsonRpcSigner | ethers.JsonRpcProvider) =>
   new ethers.Contract(NFTMarketplaceAddress, NFTMarketplaceABI, signerOrProvider);
 
 const connectingWithSmartContract = async () => {
@@ -21,19 +17,33 @@ const connectingWithSmartContract = async () => {
   return fetchContract(signer);
 };
 
-export const SmartContractContext = createContext<{
+type SmartContractContextType = {
   connectToWallet: () => Promise<void>;
   checkIfWalletIsConnected: () => Promise<void>;
-  getImageFromIPFS: (cid: string) => Promise<void>;
-  uploadNFTtoIPFS: (imageFile: File, name: string, description: string) => Promise<string>;
+  createNFT: (input: CreateNFTInput) => Promise<void>;
+  fetchNFTs: () => Promise<NFTItem[]>;
   currentAccount: string | null;
-}>({
-  connectToWallet: async () => {},
-  checkIfWalletIsConnected: async () => {},
-  getImageFromIPFS: async () => {},
-  uploadNFTtoIPFS: async () => '',
-  currentAccount: null,
-});
+} | null;
+
+type CreateNFTInput = {
+  username: string;
+  description: string;
+  price: string;
+  fileUrl: string;
+};
+
+type NFTItem = {
+  tokenId: number;
+  tokenURI: string;
+  seller: string;
+  owner: string;
+  image: string;
+  name: string;
+  description: string;
+  price: number;
+};
+
+export const SmartContractContext = createContext<SmartContractContextType>(null);
 
 export const SmartContractProvider = ({ children }: { children: React.ReactNode }) => {
   const [currentAccount, setCurrentAccount] = useState<string | null>(null);
@@ -66,64 +76,93 @@ export const SmartContractProvider = ({ children }: { children: React.ReactNode 
     }
   };
 
-  const uploadNFTtoIPFS = async (imageFile: File, name: string, description: string) => {
+  const createNFT = async ({ username, description, price, fileUrl }: CreateNFTInput) => {
     try {
-      const helia = await createHelia();
-      const fs = unixfs(helia);
-      const j = json(helia);
+      const response = await fetch('/api/metadata', {
+        method: 'POST',
+        body: JSON.stringify({ username, description, fileUrl }),
+      });
+      const url = await response.json();
 
-      // Upload the image to IPFS
-      const imageBuffer = await imageFile.arrayBuffer();
-      const imageCID = await fs.addBytes(new Uint8Array(imageBuffer));
-
-      const metadata = {
-        name,
-        description,
-        image: `ipfs://${imageCID.toString()}`,
-      };
-      // const metadataBuffer = new TextEncoder().encode(JSON.stringify(metadata));
-      const metadataCID = await j.add(metadata);
-
-      const response = await j.get(metadataCID);
-
-      const imageCID2 = response.image.replace('ipfs://', '');
-      const imageCid = CID.parse(imageCID2);
-
-      const imageUrl = `https://ipfs.io/ipfs/${imageCid.toString()}`;
-
-      console.log('Image URL:', imageUrl);
-      return metadataCID.toString();
+      await createSale(url, price, false);
     } catch (error) {
-      console.log(`Something went wrong uploading NFT to IPFS ${error}`);
+      console.log(`Something went wrong creating NFT ${error}`);
     }
   };
 
-  const getImageFromIPFS = async (cid: string) => {
-    const helia = await createHelia();
-    const j = json(helia);
+  const createSale = async (url: string, price: string, isReselling: boolean) => {
+    try {
+      const ethPrice = ethers.parseUnits(price, 'ether');
+      const contract = await connectingWithSmartContract();
 
-    // const metadataCid = CID.parse(cid);
-    const metadataBuffer = await j.get(cid);
+      const listingPrice = await contract.getListingPrice();
+      const transaction = !isReselling
+        ? await contract.createToken(url, ethPrice, { value: listingPrice.toString() })
+        : await contract.reSellToken(url, ethPrice, { value: listingPrice.toString() });
 
-    console.log(metadataBuffer);
+      await transaction.wait();
+    } catch (error) {
+      console.log(`Something went wrong creating sale ${error}`);
+    }
+  };
 
-    // const metadata = JSON.parse(new TextDecoder().decode(metadataBuffer));
-    // console.log(metadata);
-    // const imageCID = metadata.image.replace('ipfs://', '');
-    // const imageCid = CID.parse(imageCID);
+  const fetchNFTs = async () => {
+    try {
+      const provider = new ethers.JsonRpcProvider();
+      const contract = fetchContract(provider);
 
-    // const imageUrl = `https://ipfs.io/ipfs/${imageCid.toString()}`;
+      const data = await contract.fetchMarketItems();
+      console.log(data);
 
-    // console.log('Image URL:', imageUrl);
+      const items = await Promise.all(
+        data.map(
+          async ({
+            tokenId,
+            seller,
+            owner,
+            price: unformattedPrice,
+          }: {
+            tokenId: string;
+            seller: string;
+            owner: string;
+            price: string;
+          }) => {
+            const tokenURI = await contract.tokenURI(tokenId);
+            const response = await fetch(tokenURI);
+            const data = await response.json();
+            const {
+              data: { image, name, description },
+            } = data as { data: { image: string; name: string; description: string } };
+            const price = ethers.formatUnits(unformattedPrice, 'ether');
+
+            return {
+              tokenId: Number(tokenId),
+              tokenURI,
+              seller,
+              owner,
+              image,
+              name,
+              description,
+              price: Number(price),
+            } satisfies NFTItem;
+          }
+        )
+      );
+
+      return items as NFTItem[];
+    } catch (error) {
+      console.log(`Something went wrong fetching NFTs ${error}`);
+      return [];
+    }
   };
 
   return (
     <SmartContractContext.Provider
       value={{
         checkIfWalletIsConnected,
-        getImageFromIPFS,
         connectToWallet,
-        uploadNFTtoIPFS,
+        createNFT,
+        fetchNFTs,
         currentAccount,
       }}>
       {children}

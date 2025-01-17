@@ -1,36 +1,48 @@
 'use client';
 
-import React, { useContext, useRef, useState } from 'react';
-import { SmartContractContext } from '~/context/smart-contract-context';
+import Image from 'next/image';
+import { useState } from 'react';
 
-const ConnectButton = () => {
-  const [cid, setCid] = useState<string>('');
-  const inputRef = useRef<HTMLInputElement>(null);
-  const { uploadNFTtoIPFS, getImageFromIPFS } = useContext(SmartContractContext);
+export default function ConnectButton() {
+  const [file, setFile] = useState<File>();
+  const [url, setUrl] = useState('');
+  const [uploading, setUploading] = useState(false);
 
-  const onClickHandler = () => {
-    inputRef.current?.click();
+  const uploadFile = async () => {
+    try {
+      if (!file) {
+        alert('No file selected');
+        return;
+      }
+
+      setUploading(true);
+      const data = new FormData();
+      data.set('file', file);
+      const uploadRequest = await fetch('/api/files', {
+        method: 'POST',
+        body: data,
+      });
+      const ipfsUrl = await uploadRequest.json();
+      setUrl(ipfsUrl);
+      setUploading(false);
+    } catch (e) {
+      console.log(e);
+      setUploading(false);
+      alert('Trouble uploading file');
+    }
   };
 
-  const inputChangeHandler = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-
-    const cid = await uploadNFTtoIPFS(file, 'NFT Name', 'NFT Description');
-    setCid(cid);
-  };
-
-  const getImageFromIPFSHandler = async () => {
-    getImageFromIPFS(cid);
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setFile(e.target?.files?.[0]);
   };
 
   return (
-    <div>
-      <button onClick={onClickHandler}>Upload NFT</button>
-      <button onClick={getImageFromIPFSHandler}>Get image</button>
-      <input className="hidden" ref={inputRef} type="file" onChange={inputChangeHandler} />
-    </div>
+    <main className="m-auto flex min-h-screen w-full flex-col items-center justify-center">
+      <input type="file" onChange={handleChange} />
+      <button type="button" disabled={uploading} onClick={uploadFile}>
+        {uploading ? 'Uploading...' : 'Upload'}
+      </button>
+      {url && <Image width={500} height={500} src={url} alt="Image from Pinata" />}
+    </main>
   );
-};
-
-export default ConnectButton;
+}
