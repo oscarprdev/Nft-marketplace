@@ -4,6 +4,18 @@ import { NFTMarketplaceABI, NFTMarketplaceAddress } from '../constants';
 import { ethers } from 'ethers';
 import React, { createContext, useState } from 'react';
 import Web3Modal from 'web3modal';
+import { CreateNFTInput, NFTItem, NFTToken } from '~/types';
+
+type SmartContractContextType = {
+  connectToWallet: () => Promise<void>;
+  checkIfWalletIsConnected: () => Promise<void>;
+  createNFT: (input: CreateNFTInput) => Promise<void>;
+  fetchNFTs: () => Promise<NFTItem[]>;
+  fetchMyNFTs: () => Promise<NFTItem[]>;
+  fetchListedNFTs: () => Promise<NFTItem[]>;
+  buyNFT: (nft: NFTItem) => Promise<void>;
+  currentAccount: string | null;
+} | null;
 
 const fetchContract = (signerOrProvider: ethers.JsonRpcSigner | ethers.JsonRpcProvider) =>
   new ethers.Contract(NFTMarketplaceAddress, NFTMarketplaceABI, signerOrProvider);
@@ -17,38 +29,38 @@ const connectingWithSmartContract = async () => {
   return fetchContract(signer);
 };
 
-type SmartContractContextType = {
-  connectToWallet: () => Promise<void>;
-  checkIfWalletIsConnected: () => Promise<void>;
-  createNFT: (input: CreateNFTInput) => Promise<void>;
-  fetchNFTs: () => Promise<NFTItem[]>;
-  currentAccount: string | null;
-} | null;
+const convertNFTTokensToNFTItems = async (
+  tokens: NFTToken[],
+  contract: ethers.Contract
+): Promise<NFTItem[]> =>
+  await Promise.all(
+    tokens.map(async ({ tokenId, seller, owner, price: unformattedPrice }) => {
+      const tokenURI = await contract.tokenURI(tokenId);
 
-type CreateNFTInput = {
-  username: string;
-  description: string;
-  price: string;
-  fileUrl: string;
-};
+      const response = await fetch(tokenURI);
+      const data = await response.json();
 
-type NFTItem = {
-  tokenId: number;
-  tokenURI: string;
-  seller: string;
-  owner: string;
-  image: string;
-  name: string;
-  description: string;
-  price: number;
-};
+      const price = ethers.formatUnits(unformattedPrice, 'ether');
+
+      return {
+        tokenURI,
+        seller,
+        owner,
+        image: data.image,
+        name: data.name,
+        description: data.description,
+        tokenId: Number(tokenId),
+        price: Number(price),
+      } satisfies NFTItem;
+    })
+  );
 
 export const SmartContractContext = createContext<SmartContractContextType>(null);
 
 export const SmartContractProvider = ({ children }: { children: React.ReactNode }) => {
   const [currentAccount, setCurrentAccount] = useState<string | null>(null);
 
-  const checkIfWalletIsConnected = async () => {
+  const checkIfWalletIsConnected = async (): Promise<void> => {
     try {
       if (!window.ethereum) return console.log('No metamask connected');
 
@@ -64,7 +76,7 @@ export const SmartContractProvider = ({ children }: { children: React.ReactNode 
     }
   };
 
-  const connectToWallet = async () => {
+  const connectToWallet = async (): Promise<void> => {
     try {
       if (!window.ethereum) return console.log('No metamask connected');
 
@@ -76,7 +88,12 @@ export const SmartContractProvider = ({ children }: { children: React.ReactNode 
     }
   };
 
-  const createNFT = async ({ username, description, price, fileUrl }: CreateNFTInput) => {
+  const createNFT = async ({
+    username,
+    description,
+    price,
+    fileUrl,
+  }: CreateNFTInput): Promise<void> => {
     try {
       const response = await fetch('/api/metadata', {
         method: 'POST',
@@ -90,7 +107,7 @@ export const SmartContractProvider = ({ children }: { children: React.ReactNode 
     }
   };
 
-  const createSale = async (url: string, price: string, isReselling: boolean) => {
+  const createSale = async (url: string, price: string, isReselling: boolean): Promise<void> => {
     try {
       const ethPrice = ethers.parseUnits(price, 'ether');
       const contract = await connectingWithSmartContract();
@@ -106,53 +123,54 @@ export const SmartContractProvider = ({ children }: { children: React.ReactNode 
     }
   };
 
-  const fetchNFTs = async () => {
+  const fetchNFTs = async (): Promise<NFTItem[]> => {
     try {
       const provider = new ethers.JsonRpcProvider();
       const contract = fetchContract(provider);
 
       const data = await contract.fetchMarketItems();
-      console.log(data);
 
-      const items = await Promise.all(
-        data.map(
-          async ({
-            tokenId,
-            seller,
-            owner,
-            price: unformattedPrice,
-          }: {
-            tokenId: string;
-            seller: string;
-            owner: string;
-            price: string;
-          }) => {
-            const tokenURI = await contract.tokenURI(tokenId);
-            const response = await fetch(tokenURI);
-            const data = await response.json();
-            const {
-              data: { image, name, description },
-            } = data as { data: { image: string; name: string; description: string } };
-            const price = ethers.formatUnits(unformattedPrice, 'ether');
-
-            return {
-              tokenId: Number(tokenId),
-              tokenURI,
-              seller,
-              owner,
-              image,
-              name,
-              description,
-              price: Number(price),
-            } satisfies NFTItem;
-          }
-        )
-      );
-
-      return items as NFTItem[];
+      return await convertNFTTokensToNFTItems(data, contract);
     } catch (error) {
       console.log(`Something went wrong fetching NFTs ${error}`);
       return [];
+    }
+  };
+
+  const fetchMyNFTs = async (): Promise<NFTItem[]> => {
+    try {
+      const contract = await connectingWithSmartContract();
+      const data = (await contract.fetchMyNFT()) as NFTToken[];
+
+      return await convertNFTTokensToNFTItems(data, contract);
+    } catch (error) {
+      console.log(`Something went wrong fetching my NFTs ${error}`);
+      return [];
+    }
+  };
+
+  const fetchListedNFTs = async (): Promise<NFTItem[]> => {
+    try {
+      const contract = await connectingWithSmartContract();
+      const data = (await contract.fetchItemsListed()) as NFTToken[];
+
+      return await convertNFTTokensToNFTItems(data, contract);
+    } catch (error) {
+      console.log(`Something went wrong fetching listed NFTs ${error}`);
+      return [];
+    }
+  };
+
+  const buyNFT = async (nft: NFTItem): Promise<void> => {
+    try {
+      const contract = await connectingWithSmartContract();
+      const price = ethers.parseUnits(nft.price.toString(), 'ether');
+
+      const transaction = await contract.createMarketSale(nft.tokenId, { value: price });
+
+      await transaction.wait();
+    } catch (error) {
+      console.log(`Something went wrong buying NFT ${error}`);
     }
   };
 
@@ -163,6 +181,9 @@ export const SmartContractProvider = ({ children }: { children: React.ReactNode 
         connectToWallet,
         createNFT,
         fetchNFTs,
+        fetchMyNFTs,
+        fetchListedNFTs,
+        buyNFT,
         currentAccount,
       }}>
       {children}
