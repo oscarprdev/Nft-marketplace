@@ -29,25 +29,19 @@ const CreateNFTForm = () => {
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     try {
-      console.log('submit');
       e.preventDefault();
       setCreatingNFT(true);
 
-      // const { username, description, price, fileUrl } = formState;
+      const { username, description, price, fileUrl } = formState;
 
-      // if (!username || !description || !price || !fileUrl)
-      //   throw new Error('All fields are required');
-
-      const username = 'oscar';
-      const description = 'test';
-      const price = '0.01';
-      const fileUrl = 'he';
+      if (!username || !description || !price || !fileUrl)
+        throw new Error('All fields are required');
 
       await createNFT({ username, description, price, fileUrl });
     } catch (error) {
       setError(error instanceof Error ? error.message : 'Something went wrong creating NFT');
     } finally {
-      setUploadingFile(false);
+      setCreatingNFT(false);
     }
   };
 

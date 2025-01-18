@@ -113,13 +113,20 @@ export const SmartContractProvider = ({ children }: { children: React.ReactNode 
       const ethPrice = ethers.parseUnits(price, 'ether');
       const contract = await connectingWithSmartContract();
 
+      const web3Modal = new Web3Modal({ cacheProvider: true });
+      const connection = await web3Modal.connect();
+      const provider = new ethers.BrowserProvider(connection);
+
+      const currentNonce = await provider.getTransactionCount(NFTMarketplaceAddress, 'latest');
+
       // const listingPrice = await contract.getListingPrice();
       const transaction = !isReselling
         ? await contract.createToken(url, ethPrice, {
-            value: ethers.parseEther('0.0012').toString(),
+            value: ethers.parseEther('0.0015').toString(),
+            nonce: currentNonce,
           })
         : await contract.reSellToken(url, ethPrice, {
-            value: ethers.parseEther('0.0012').toString(),
+            value: ethers.parseEther('0.0015').toString(),
           });
 
       await transaction.wait();
