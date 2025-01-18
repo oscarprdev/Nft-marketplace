@@ -1,5 +1,6 @@
 import ConnectButton from '~/components/connect-button';
 import CreateNFTForm from '~/components/create-nft-form';
+import NFTList from '~/components/nft-list';
 
 export default async function Home() {
   return (
@@ -7,6 +8,7 @@ export default async function Home() {
       <main className="row-start-2 flex flex-col items-center gap-8 sm:items-start">
         <ConnectButton />
         <CreateNFTForm />
+        <NFTList />
       </main>
     </div>
   );

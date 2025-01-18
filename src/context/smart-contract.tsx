@@ -113,14 +113,18 @@ export const SmartContractProvider = ({ children }: { children: React.ReactNode 
       const ethPrice = ethers.parseUnits(price, 'ether');
       const contract = await connectingWithSmartContract();
 
-      const listingPrice = await contract.getListingPrice();
+      // const listingPrice = await contract.getListingPrice();
       const transaction = !isReselling
-        ? await contract.createToken(url, ethPrice, { value: listingPrice.toString() })
-        : await contract.reSellToken(url, ethPrice, { value: listingPrice.toString() });
+        ? await contract.createToken(url, ethPrice, {
+            value: ethers.parseEther('0.0012').toString(),
+          })
+        : await contract.reSellToken(url, ethPrice, {
+            value: ethers.parseEther('0.0012').toString(),
+          });
 
       await transaction.wait();
 
-      console.log(listingPrice);
+      console.log(transaction);
     } catch (error) {
       console.log(`Something went wrong creating sale ${error}`);
     }

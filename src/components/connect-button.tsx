@@ -1,7 +1,7 @@
 'use client';
 
 import { useContext } from 'react';
-import { SmartContractContext } from '~/context/smart-contract-context';
+import { SmartContractContext } from '~/context/smart-contract';
 
 export default function ConnectButton() {
   const { connectToWallet, currentAccount } = useContext(SmartContractContext)!;

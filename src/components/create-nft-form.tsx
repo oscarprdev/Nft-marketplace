@@ -2,7 +2,7 @@
 
 import Image from 'next/image';
 import React, { useContext, useRef, useState } from 'react';
-import { SmartContractContext } from '~/context/smart-contract-context';
+import { SmartContractContext } from '~/context/smart-contract';
 
 const defaultState = {
   username: '',
