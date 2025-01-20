@@ -8,12 +8,16 @@ const NFTList = () => {
   const { fetchNFTs } = useContext(SmartContractContext)!;
   const { data, isLoading } = useQuery({
     queryKey: ['nfts'],
-    queryFn: async () => await fetchNFTs(),
+    queryFn: async () => {
+      const response = await fetchNFTs();
+      console.log({ response });
+      return response;
+    },
   });
 
   console.log(data);
 
-  return <div className="size-10 text-white">{!isLoading && data && JSON.stringify(data)}</div>;
+  return <div className="size-10 text-white">{isLoading ? 'loading' : JSON.stringify(data)}</div>;
 };
 
 export default NFTList;

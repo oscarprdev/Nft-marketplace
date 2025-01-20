@@ -9,16 +9,14 @@ export type NFTItem = {
   price: number;
 };
 
-export type NFTToken = {
-  tokenId: string;
-  seller: string;
-  owner: string;
-  price: string;
+export type ContractNFT = {
+  0: string; // id
+  1: string; // owner
+  2: string; // metadat-URL
+  3: string; // price
 };
 
 export type CreateNFTInput = {
-  username: string;
-  description: string;
+  metadataUrl: string;
   price: string;
-  fileUrl: string;
 };

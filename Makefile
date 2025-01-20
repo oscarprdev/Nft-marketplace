@@ -1,7 +1,7 @@
 # Makefile for Smart Contract Testing, Deployment, and Client App Management
 
 HARDHAT = npx hardhat
-IGNITION_DEPLOY = $(HARDHAT) ignition deploy ./ignition/modules/NFTMarketplace.ts
+IGNITION_DEPLOY = $(HARDHAT) ignition deploy ./ignition/modules/NFTMarketplace.ts --network localhost
 
 # Smart Contract Commands
 .PHONY: hardhat_test hardhat_test-gas hardhat_node hardhat_deploy

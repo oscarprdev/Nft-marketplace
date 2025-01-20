@@ -3,6 +3,7 @@
 import Image from 'next/image';
 import React, { useContext, useRef, useState } from 'react';
 import { SmartContractContext } from '~/context/smart-contract';
+import { uploadFile, uploadMetadata } from '~/lib/services';
 
 const defaultState = {
   username: '',
@@ -37,7 +38,9 @@ const CreateNFTForm = () => {
       if (!username || !description || !price || !fileUrl)
         throw new Error('All fields are required');
 
-      await createNFT({ username, description, price, fileUrl });
+      const metadataUrl = await uploadMetadata(formState);
+
+      await createNFT({ metadataUrl, price });
     } catch (error) {
       setError(error instanceof Error ? error.message : 'Something went wrong creating NFT');
     } finally {
@@ -50,16 +53,9 @@ const CreateNFTForm = () => {
       setUploadingFile(true);
 
       const file = e.target.files?.[0];
-      if (!file) throw new Error('No file selected');
+      if (!file) throw new Error('File is required');
 
-      const formData = new FormData();
-      formData.append('file', file);
-
-      const resonse = await fetch('/api/files', {
-        method: 'POST',
-        body: formData,
-      });
-      const data = await resonse.json();
+      const data = await uploadFile(file);
 
       setFormState({ ...formState, fileUrl: data });
     } catch (error) {
