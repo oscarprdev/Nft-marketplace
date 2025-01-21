@@ -7,7 +7,13 @@ const NFTCard = (props: NFTItem) => {
 
   return (
     <article>
-      <Image src={image} alt={username} className="object-fit size-20" width={500} height={500} />
+      <Image
+        src={image}
+        alt={username}
+        className="object-fit size-20"
+        width={500}
+        height={500}
+      />
       <p>{description}</p>
     </article>
   );

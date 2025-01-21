@@ -11,14 +11,11 @@
   "bracketSameLine": true,
   "arrowParens": "avoid",
   "endOfLine": "lf",
-  "singleAttributePerLine": false,
+  "singleAttributePerLine": true,
   "htmlWhitespaceSensitivity": "css",
   "importOrderSeparation": true,
   "importOrderSortSpecifiers": true,
-  "plugins": [
-    "@trivago/prettier-plugin-sort-imports",
-    "prettier-plugin-tailwindcss"
-  ],
+  "plugins": ["@trivago/prettier-plugin-sort-imports", "prettier-plugin-tailwindcss"],
   "tailwindConfig": "./tailwind.config.ts",
   "tailwindAttributes": ["tw"],
   "tailwindFunctions": ["tw"]

@@ -13,7 +13,10 @@ const NFTList = () => {
   return (
     <section className="size-10 text-white">
       {nftList.map(nft => (
-        <NFTCard key={nft.tokenId} {...nft} />
+        <NFTCard
+          key={nft.tokenId}
+          {...nft}
+        />
       ))}
     </section>
   );

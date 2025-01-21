@@ -67,7 +67,12 @@ const CreateNFTForm = () => {
     <>
       <div className="flex items-center gap-2">
         {formState.image && (
-          <Image src={formState.image} alt="NFT Image" width={300} height={300} />
+          <Image
+            src={formState.image}
+            alt="NFT Image"
+            width={300}
+            height={300}
+          />
         )}
         <button
           type="button"
@@ -75,9 +80,16 @@ const CreateNFTForm = () => {
           onClick={() => inputFileRef?.current?.click()}>
           {uploadingFile ? 'Uploading...' : 'Upload file'}
         </button>
-        <input className="hidden" type="file" ref={inputFileRef} onChange={handleChangeFile} />
+        <input
+          className="hidden"
+          type="file"
+          ref={inputFileRef}
+          onChange={handleChangeFile}
+        />
       </div>
-      <form onSubmit={handleSubmit} className="flex w-full flex-col items-center space-y-2">
+      <form
+        onSubmit={handleSubmit}
+        className="flex w-full flex-col items-center space-y-2">
         <label className="flex w-1/2 flex-col items-start gap-2">
           Username
           <input

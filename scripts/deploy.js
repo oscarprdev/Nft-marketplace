@@ -1,16 +1,15 @@
-import { ethers } from "hardhat";
+import { ethers } from 'hardhat';
 
 async function main() {
-  const Lock = await ethers.getContractFactory("Lock");
+  const Lock = await ethers.getContractFactory('Lock');
   const lock = await Lock.deploy();
 
   await lock.deployed();
 
-  console.log("Lock with 1 ETH deployed to:", lock.address);
+  console.log('Lock with 1 ETH deployed to:', lock.address);
 }
 
-
-main().catch((error) => {
+main().catch(error => {
   console.error(error);
   process.exitCode = 1;
 });
