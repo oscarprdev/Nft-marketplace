@@ -1,30 +1,10 @@
 'use client';
 
 import NFTCard from './nft-card';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
-import React, { useContext, useEffect } from 'react';
-import { SmartContractContext } from '~/context/smart-contract';
-import { getNFTList } from '~/lib/queries/get-nft-list';
-
-const QUERY_KEY = 'nfts';
+import { useNFTList } from '~/hooks/use-nft-list';
 
 const NFTList = () => {
-  const queryClient = useQueryClient();
-
-  const { fetchNFTs, contract } = useContext(SmartContractContext)!;
-
-  const response = useQuery({
-    queryKey: [QUERY_KEY],
-    queryFn: async () => await getNFTList(fetchNFTs),
-  });
-
-  useEffect(() => {
-    contract?.on('NFTMinted', async () => {
-      await queryClient.invalidateQueries({ queryKey: [QUERY_KEY] });
-    });
-  }, [contract, queryClient]);
-
-  const { data: nftList, error, isLoading } = response;
+  const { nftList, error, isLoading } = useNFTList();
 
   if (error) return <p>Error: {error.message}</p>;
   if (isLoading) return <p>Loading...</p>;
