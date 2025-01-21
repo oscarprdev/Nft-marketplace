@@ -47,19 +47,7 @@ export const SmartContractProvider = ({ children }: { children: React.ReactNode 
       const contract = getContract();
       const data = await contract.getNFTs();
 
-      return data?.map((nft: ContractNFT) => {
-        const [tokenId, creator, owner, uri, price, isListed, timestamp] = Object.values(nft);
-
-        return {
-          tokenId: Number(tokenId),
-          creator,
-          owner,
-          uri,
-          isListed,
-          price: ethers.formatEther(price),
-          timestamp: Number(timestamp).toString(),
-        } satisfies ContractNFTItem;
-      });
+      return data.map(mapContractNFTtoApp);
     } catch (error) {
       console.log(`Something went wrong fetching NFTs ${error}`);
       return [];
@@ -77,4 +65,18 @@ export const SmartContractProvider = ({ children }: { children: React.ReactNode 
       {children}
     </SmartContractContext.Provider>
   );
+};
+
+const mapContractNFTtoApp = (nft: ContractNFT): ContractNFTItem => {
+  const [tokenId, creator, owner, uri, price, isListed, timestamp] = Object.values(nft);
+
+  return {
+    tokenId: Number(tokenId),
+    creator,
+    owner,
+    uri,
+    isListed,
+    price: ethers.formatEther(price),
+    timestamp: Number(timestamp).toString(),
+  } satisfies ContractNFTItem;
 };
