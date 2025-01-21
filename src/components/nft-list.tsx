@@ -4,8 +4,7 @@ import NFTCard from './nft-card';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import React, { useContext, useEffect } from 'react';
 import { SmartContractContext } from '~/context/smart-contract';
-import { getMetadata } from '~/lib/services';
-import { NFTItem } from '~/types';
+import { getNFTList } from '~/lib/queries/get-nft-list';
 
 const QUERY_KEY = 'nfts';
 
@@ -13,32 +12,19 @@ const NFTList = () => {
   const queryClient = useQueryClient();
 
   const { fetchNFTs, contract } = useContext(SmartContractContext)!;
-  const {
-    data: nftList,
-    isLoading,
-    error,
-  } = useQuery({
+
+  const response = useQuery({
     queryKey: [QUERY_KEY],
-    queryFn: async (): Promise<NFTItem[]> => {
-      const nfts = await fetchNFTs();
-      return await Promise.all(
-        nfts.map(async nft => {
-          const metadata = await getMetadata(nft.uri);
-          return {
-            ...nft,
-            metadata,
-          } satisfies NFTItem;
-        })
-      );
-    },
+    queryFn: async () => await getNFTList(fetchNFTs),
   });
 
   useEffect(() => {
-    contract?.on('NFTMinted', async (creator, tokenId) => {
-      console.log('NFTMinted', creator, tokenId);
+    contract?.on('NFTMinted', async () => {
       await queryClient.invalidateQueries({ queryKey: [QUERY_KEY] });
     });
   }, [contract, queryClient]);
+
+  const { data: nftList, error, isLoading } = response;
 
   if (error) return <p>Error: {error.message}</p>;
   if (isLoading) return <p>Loading...</p>;
