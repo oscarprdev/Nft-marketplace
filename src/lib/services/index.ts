@@ -23,3 +23,9 @@ export const uploadMetadata = async (input: UploadMetadataInput) => {
   });
   return await resonse.json();
 };
+
+export const getMetadata = async (url: string) => {
+  const resonse = await fetch(url);
+
+  return await resonse.json();
+};

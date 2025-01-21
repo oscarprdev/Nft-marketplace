@@ -144,6 +144,10 @@ contract NFTCollection is ERC721URIStorage {
         emit NFTSelled(nftToSell.owner, highestBidder, highestOfferPrice);
     }
 
+    function getNFTs() external view returns (NFT[] memory) {
+        return nftList;
+    }
+
     function getNFTsByOwner(address _address) external view returns (NFT[] memory) {
         uint itemCount;
         for (uint i = 0; i < nftList.length; i++) {
