@@ -40,7 +40,7 @@ contract NFTCollection is ERC721URIStorage {
         _;
     }
 
-    constructor() ERC721("NFT Marketplace", "NFTM") {
+    constructor() ERC721("NFT Collection", "NFTC") {
         owner = msg.sender;
     }
 

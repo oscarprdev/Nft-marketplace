@@ -1,12 +1,11 @@
 // This setup uses Hardhat Ignition to manage smart contract deployments.
 // Learn more about it at https://hardhat.org/ignition
+import { buildModule } from '@nomicfoundation/hardhat-ignition/modules';
 
-import { buildModule } from "@nomicfoundation/hardhat-ignition/modules";
+const NFTCollectionModule = buildModule('NFTCollectionModule', m => {
+  const nftCollection = m.contract('NFTCollection');
 
-const NFTMarketplaceModule = buildModule("NFTMarketplaceModule", (m) => {
-  const nftMarketplace = m.contract("NFTMarketplace");
-
-  return { nftMarketplace };
+  return { nftCollection };
 });
 
-export default NFTMarketplaceModule;
+export default NFTCollectionModule;
