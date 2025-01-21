@@ -7,11 +7,10 @@ import Web3Modal from 'web3modal';
 import { ContractNFT, ContractNFTItem, CreateNFTInput } from '~/types';
 
 type SmartContractContextType = {
-  connectToWallet: () => Promise<void>;
-  checkIfWalletIsConnected: () => Promise<void>;
+  connectToWallet: () => Promise<void>
   createNFT: (input: CreateNFTInput) => Promise<void>;
   fetchNFTs: () => Promise<ContractNFTItem[]>;
-  currentAccount: string | null;
+  contract: ethers.Contract | null;
 } | null;
 
 const fetchContract = (signerOrProvider: ethers.JsonRpcSigner | ethers.JsonRpcProvider) =>
@@ -29,31 +28,32 @@ const connectingWithSmartContract = async () => {
 export const SmartContractContext = createContext<SmartContractContextType>(null);
 
 export const SmartContractProvider = ({ children }: { children: React.ReactNode }) => {
-  const [currentAccount, setCurrentAccount] = useState<string | null>(null);
+  const [contract, setContract] = useState<ethers.Contract | null>(null);
 
-  const checkIfWalletIsConnected = async (): Promise<void> => {
-    try {
-      if (!window.ethereum) return console.log('No metamask connected');
+  // const checkIfWalletIsConnected = async (): Promise<void> => {
+  //   try {
+  //     if (!window.ethereum) return console.log('No metamask connected');
 
-      const accounts = await window.ethereum.request({ method: 'eth_accounts' });
+  //     const accounts = await window.ethereum.request({ method: 'eth_accounts' });
 
-      if (accounts.length) {
-        setCurrentAccount(accounts[0]);
-      } else {
-        console.log('No accounts found');
-      }
-    } catch (error) {
-      console.log(`Something went wrong ${error}`);
-    }
-  };
+  //     if (accounts.length) {
+  //       setCurrentAccount(accounts[0]);
+  //     } else {
+  //       console.log('No accounts found');
+  //     }
+  //   } catch (error) {
+  //     console.log(`Something went wrong ${error}`);
+  //   }
+  // };
 
   const connectToWallet = async (): Promise<void> => {
     try {
       if (!window.ethereum) return console.log('No metamask connected');
 
-      const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+      // const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+      const contract = await connectingWithSmartContract();
 
-      setCurrentAccount(accounts[0]);
+      setContract(contract);
     } catch (error) {
       console.log(`Something went wrong connecting to wallet ${error}`);
     }
@@ -71,20 +71,22 @@ export const SmartContractProvider = ({ children }: { children: React.ReactNode 
 
   const fetchNFTs = async (): Promise<ContractNFTItem[]> => {
     try {
-      const contract = await connectingWithSmartContract();
+      const provider = new ethers.JsonRpcProvider('http://127.0.0.1:8545');
+      const contract = new ethers.Contract(NFTMarketplaceAddress, NFTMarketplaceABI, provider);
+
       const data = await contract.getNFTs();
 
       return data?.map((nft: ContractNFT) => {
-        const [tokenId, creator, owner, uri, price, isListed] = Object.values(nft);
+        const [tokenId, creator, owner, uri, price, isListed, timestamp] = Object.values(nft);
 
         return {
           tokenId: Number(tokenId),
           creator,
           owner,
           uri,
-          price: ethers.formatEther(price),
           isListed,
-          timestamp: '2023-01-01T00:00:00.000Z',
+          price: ethers.formatEther(price),
+          timestamp: Number(timestamp).toString(),
         } satisfies ContractNFTItem;
       });
     } catch (error) {
@@ -96,11 +98,10 @@ export const SmartContractProvider = ({ children }: { children: React.ReactNode 
   return (
     <SmartContractContext.Provider
       value={{
-        checkIfWalletIsConnected,
-        connectToWallet,
         createNFT,
         fetchNFTs,
-        currentAccount,
+        connectToWallet,
+        contract,
       }}>
       {children}
     </SmartContractContext.Provider>

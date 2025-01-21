@@ -4,11 +4,11 @@ import { useContext } from 'react';
 import { SmartContractContext } from '~/context/smart-contract';
 
 export default function ConnectButton() {
-  const { connectToWallet, currentAccount } = useContext(SmartContractContext)!;
+  const { connectToWallet, contract } = useContext(SmartContractContext)!;
 
   return (
     <>
-      {currentAccount ? (
+      {contract ? (
         <p>Connected!</p>
       ) : (
         <button

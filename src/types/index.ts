@@ -1,9 +1,9 @@
 export interface NFTItem extends ContractNFTItem {
-  metadatata: NFTMetadata;
+  metadata: NFTMetadata;
 }
 
 export type NFTMetadata = {
-  name: string;
+  username: string;
   description: string;
   image: string;
 };

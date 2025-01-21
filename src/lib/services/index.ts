@@ -13,7 +13,7 @@ type UploadMetadataInput = {
   username: string;
   description: string;
   price: string;
-  fileUrl: string;
+  image: string;
 };
 
 export const uploadMetadata = async (input: UploadMetadataInput) => {

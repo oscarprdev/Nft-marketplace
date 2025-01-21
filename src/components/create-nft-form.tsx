@@ -9,7 +9,7 @@ const defaultState = {
   username: '',
   description: '',
   price: '',
-  fileUrl: '',
+  image: '',
 };
 
 const CreateNFTForm = () => {
@@ -33,10 +33,9 @@ const CreateNFTForm = () => {
       e.preventDefault();
       setCreatingNFT(true);
 
-      const { username, description, price, fileUrl } = formState;
+      const { username, description, price, image } = formState;
 
-      if (!username || !description || !price || !fileUrl)
-        throw new Error('All fields are required');
+      if (!username || !description || !price || !image) throw new Error('All fields are required');
 
       const metadataUrl = await uploadMetadata(formState);
 
@@ -57,7 +56,7 @@ const CreateNFTForm = () => {
 
       const data = await uploadFile(file);
 
-      setFormState({ ...formState, fileUrl: data });
+      setFormState({ ...formState, image: data });
     } catch (error) {
       setError(error instanceof Error ? error.message : 'Something went wrong uploading file');
     } finally {
@@ -67,8 +66,8 @@ const CreateNFTForm = () => {
   return (
     <>
       <div className="flex items-center gap-2">
-        {formState.fileUrl && (
-          <Image src={formState.fileUrl} alt="NFT Image" width={300} height={300} />
+        {formState.image && (
+          <Image src={formState.image} alt="NFT Image" width={300} height={300} />
         )}
         <button
           type="button"
