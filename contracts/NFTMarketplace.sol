@@ -33,7 +33,7 @@ contract NFTCollection is ERC721URIStorage {
     NFTOffer[] public offersList;
 
     event NFTMinted(address indexed owner, uint256 indexed tokenId);
-    event NFTSold(address indexed from, address indexed to, uint price);
+    event NFTSelled(address indexed from, address indexed to, uint price);
 
     modifier onlyOwner() {
         require(msg.sender == owner, "Only owner can call this function");
@@ -141,7 +141,7 @@ contract NFTCollection is ERC721URIStorage {
         // Update NFT offers array deletting all the offers for the NFT already sold
         deleteOffersForNFT(_tokenId);
 
-        emit NFTSold(nftToSell.owner, highestBidder, highestOfferPrice);
+        emit NFTSelled(nftToSell.owner, highestBidder, highestOfferPrice);
     }
 
     function getNFTsByOwner(address _address) external view returns (NFT[] memory) {
@@ -213,6 +213,10 @@ contract NFTCollection is ERC721URIStorage {
                 index++;
             }
         }
-        offersList = newOffersList;
+
+        delete offersList;
+        for (uint i = 0; i < newOffersList.length; i++) {
+            offersList.push(newOffersList[i]);
+        }
     }
 }
