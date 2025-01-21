@@ -16,7 +16,13 @@ hardhat_node:
 	$(HARDHAT) node
 
 hardhat_deploy:
-	$(IGNITION_DEPLOY)
+	rm -rf ./artifacts
+	rm -rf ./cache
+	rm -rf ./contracts/NFTCollection.json
+	npx hardhat ignition deploy ./ignition/modules/NFTMarketplace.ts --network localhost
+	mv ./artifacts/contracts/NFTMarketplace.sol/NFTCollection.json ./contracts
+
+hardhat_start: hardhat_node hardhat_deploy	
 
 # Client App Commands
 .PHONY: start build lint
