@@ -1,37 +1,19 @@
 'use client';
 
 import { ethers } from 'ethers';
-import React, { createContext, useState } from 'react';
+import React, { createContext } from 'react';
 import { connectWithSmartContract } from '~/lib/ethers/connect-contract';
 import { getContract } from '~/lib/ethers/get-contract';
 import { ContractNFT, ContractNFTItem, CreateNFTInput } from '~/types';
 
 type SmartContractContextType = {
-  connectToWallet: () => Promise<void>;
   createNFT: (input: CreateNFTInput) => Promise<void>;
   fetchNFTs: () => Promise<ContractNFTItem[]>;
-  contract: ethers.Contract | null;
 } | null;
 
 export const SmartContractContext = createContext<SmartContractContextType>(null);
 
 export const SmartContractProvider = ({ children }: { children: React.ReactNode }) => {
-  const [contract, setContract] = useState<ethers.Contract | null>(null);
-
-  const connectToWallet = async (): Promise<void> => {
-    try {
-      if (!window.ethereum) return console.log('No metamask connected');
-
-      // const accounts = await window.ethereum.request({ method: 'eth_accounts' });
-      // const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
-      const contract = await connectWithSmartContract();
-
-      setContract(contract);
-    } catch (error) {
-      console.log(`Something went wrong connecting to wallet ${error}`);
-    }
-  };
-
   const createNFT = async ({ metadataUrl, price }: CreateNFTInput): Promise<void> => {
     try {
       const contract = await connectWithSmartContract();
@@ -59,8 +41,6 @@ export const SmartContractProvider = ({ children }: { children: React.ReactNode 
       value={{
         createNFT,
         fetchNFTs,
-        connectToWallet,
-        contract,
       }}>
       {children}
     </SmartContractContext.Provider>

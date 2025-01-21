@@ -61,9 +61,6 @@ contract NFTCollection is ERC721URIStorage {
         _safeMint(msg.sender, NFTCount);
         _setTokenURI(NFTCount, _uri);
 
-        // (bool success, ) = payable(address(this)).call{value: FEE}("");
-        // require(success, "Mint payment fee failed");
-
         emit NFTMinted(msg.sender, NFTCount);
     }
 
