@@ -9,7 +9,7 @@ contract NFTCollection is ERC721URIStorage {
     uint256 public NFTCount;
     uint256 public offersCount;
     address immutable owner;
-    uint256 constant FEE = 0.0015 ether;
+    // uint256 constant FEE = 0.0015 ether;
 
     struct NFT {
         uint256 tokenId;       // Unique token ID
@@ -26,13 +26,14 @@ contract NFTCollection is ERC721URIStorage {
         uint256 tokenId;
         address buyer;
         uint256 price;
+        uint256 expirationDate;
     }
 
     NFT[] public nftList;
     NFTOffer[] public offersList;
 
     event NFTMinted(address indexed owner, uint256 indexed tokenId);
-    event NFTSelled(address indexed from, address indexed to, uint price);
+    event NFTSold(address indexed from, address indexed to, uint price);
 
     modifier onlyOwner() {
         require(msg.sender == owner, "Only owner can call this function");
@@ -51,7 +52,7 @@ contract NFTCollection is ERC721URIStorage {
             owner: msg.sender,
             uri: _uri,
             price: _price,
-            isListed: false,
+            isListed: false, // Default to not listed
             timestamp: block.timestamp
         });
 
@@ -60,58 +61,87 @@ contract NFTCollection is ERC721URIStorage {
         _safeMint(msg.sender, NFTCount);
         _setTokenURI(NFTCount, _uri);
 
-        (bool success, ) = payable(address(this)).call{value: FEE}("");
-        require(success, "Mint payment fee failed");
+        // (bool success, ) = payable(address(this)).call{value: FEE}("");
+        // require(success, "Mint payment fee failed");
 
         emit NFTMinted(msg.sender, NFTCount);
     }
 
-    function acceptOffer(uint256 _offerId) external payable onlyOwner {
-        NFTOffer memory offer;
-        for (uint i = 0; i < offersList.length; i++) {
-            if (offersList[i].offerId == _offerId) {
-                offer = offersList[i];
-                break;
-            }
-        }
+    function createOffer(uint256 _tokenId, uint256 _expirationDate) external payable {
+        require(_expirationDate > block.timestamp, "Expiration date must be greater thant the block timestamp");
 
-        NFT memory nftToSell;
-        for (uint i = 0; i < nftList.length; i++) {
-            if (nftList[i].tokenId == offer.tokenId) {
-                nftToSell = nftList[i];
-                break;
-            }
-        }
-
-        require(nftToSell.price == offer.price, "Price must match the sent value");
-        require(nftToSell.isListed, "NFT must be listed for sale");
-
-        (bool success, ) = payable(msg.sender).call{value: offer.price}("");
-        require(success, "Payment transfer failed");
-
-        nftToSell.owner = offer.buyer;
-        nftToSell.isListed = false;
-
-        emit NFTSelled(msg.sender, offer.buyer, offer.price);
-    }
-
-    function createOffer(uint256 _tokenId) external payable {
-        offersCount++;
+        // Find the NFT to offer by token id
         NFT memory nftToOffer;
-
-         for (uint i = 0; i < nftList.length; i++) {
+        for (uint i = 0; i < nftList.length; i++) {
             if (nftList[i].tokenId == _tokenId) {
                 nftToOffer = nftList[i];
                 break;
             }
         }
 
-        require(msg.value >= nftToOffer.price, "Price must be equal or greater than the current price");
+        // Check if the offer is higher than the current highest offer
+        uint256 highestOfferPrice = 0;
+        for (uint i = 0; i < offersList.length; i++) {
+            if (offersList[i].tokenId == _tokenId && offersList[i].price > highestOfferPrice) {
+                highestOfferPrice = offersList[i].price;
+            }
+        }
+        require(msg.value > highestOfferPrice, "Your offer must be higher than the current highest offer");
 
-        offersList.push(NFTOffer(offersCount, nftToOffer.tokenId, msg.sender, msg.value));
+        offersCount++;
+        offersList.push(NFTOffer({
+            offerId: offersCount,
+            tokenId: _tokenId,
+            buyer: msg.sender,
+            price: msg.value,
+            expirationDate: _expirationDate
+        }));
+    }
 
-        (bool success, ) = payable(address(this)).call{value: msg.value}("");
-        require(success, "Offer failed");
+    function finalizeAuction(uint256 _tokenId) external {
+        // Find the NFT to sell by token id
+        NFT memory nftToSell;
+        for (uint i = 0; i < nftList.length; i++) {
+            if (nftList[i].tokenId == _tokenId) {
+                nftToSell = nftList[i];
+                break;
+            }
+        }
+        require(nftToSell.isListed, "NFT must be listed for auction");
+
+        // Find the highest offer by token id and expiration date
+        uint256 highestOfferPrice = 0;
+        uint256 highestOfferId;
+        address highestBidder;
+        for (uint i = 0; i < offersList.length; i++) {
+            if (offersList[i].tokenId == _tokenId && block.timestamp >= offersList[i].expirationDate) {
+                if (offersList[i].price > highestOfferPrice) {
+                    highestOfferPrice = offersList[i].price;
+                    highestOfferId = offersList[i].offerId;
+                    highestBidder = offersList[i].buyer;
+                }
+            }
+        }
+        require(highestOfferPrice > 0, "No valid offers found or auction has not expired");
+
+        // Transfer the NFT to the highest bidder
+        _transfer(nftToSell.owner, highestBidder, _tokenId);
+        for (uint i = 0; i < nftList.length; i++) {
+            if (nftList[i].tokenId == _tokenId) {
+                nftList[i].owner = highestBidder;
+                nftList[i].isListed = false;
+                nftList[i].price = highestOfferPrice;
+                break;
+            }
+        }
+
+        (bool success, ) = payable(nftToSell.owner).call{value: highestOfferPrice}("");
+        require(success, "Transfer to seller failed");
+
+        // Update NFT offers array deletting all the offers for the NFT already sold
+        deleteOffersForNFT(_tokenId);
+
+        emit NFTSold(nftToSell.owner, highestBidder, highestOfferPrice);
     }
 
     function getNFTsByOwner(address _address) external view returns (NFT[] memory) {
@@ -145,5 +175,44 @@ contract NFTCollection is ERC721URIStorage {
         }
 
         return nft;
+    }
+
+    function getOffersByTokenId(uint256 _tokenId) external view returns (NFTOffer[] memory) {
+        uint itemCount;
+        for (uint i = 0; i < offersList.length; i++) {
+            if (offersList[i].tokenId == _tokenId) {
+                itemCount++;
+            }
+        }
+
+        NFTOffer[] memory offersByTokenId = new NFTOffer[](itemCount);
+        uint index = 0;
+        for (uint i = 0; i < offersList.length; i++) {
+            if (offersList[i].tokenId == _tokenId) {
+                offersByTokenId[index] = offersList[i];
+                index++;
+            }
+        }
+
+        return offersByTokenId;
+    }
+
+    function deleteOffersForNFT(uint256 _tokenId) internal {
+        uint count;
+        for (uint i = 0; i < offersList.length; i++) {
+            if (offersList[i].tokenId == _tokenId) {
+                count++;
+            }
+        }
+
+        NFTOffer[] memory newOffersList = new NFTOffer[](offersList.length - count);
+        uint index = 0;
+        for (uint i = 0; i < offersList.length; i++) {
+            if (offersList[i].tokenId != _tokenId) {
+                newOffersList[index] = offersList[i];
+                index++;
+            }
+        }
+        offersList = newOffersList;
     }
 }
