@@ -128,7 +128,7 @@ contract NFTCollection is ERC721URIStorage {
     function createOffer(uint256 _tokenId, uint256 _expirationDate) external payable {
         require(_expirationDate > block.timestamp, "Expiration date must be greater thant the block timestamp");
 
-        // Find the NFT to offer by token id
+        /// @notice find the NFT to offer by token id
         NFT memory nftToOffer;
         for (uint i = 0; i < nftList.length; i++) {
             if (nftList[i].tokenId == _tokenId) {
