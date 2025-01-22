@@ -1,9 +1,9 @@
 import Image from 'next/image';
 import React, { useContext } from 'react';
-import { ModalContext, ModalProps } from '~/context/modal';
+import { ModalContext } from '~/context/modal';
 import { NFTItem } from '~/types';
 
-const Test = (props: ModalProps) => {
+const Test = (props: { test: string }) => {
   return <div>{JSON.stringify(props)}</div>;
 };
 
@@ -12,13 +12,10 @@ const NFTCard = (props: NFTItem) => {
   const { title, image } = props.metadata;
 
   const handleClick = () => {
-    modalContext?.open(
-      <Test
-        id="1"
-        title="TES"
-        data={{ test: 'test' }}
-      />
-    );
+    modalContext?.open({
+      content: <Test test="test" />,
+      props: { id: 'test', title: 'Test' },
+    });
   };
 
   return (

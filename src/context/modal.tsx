@@ -5,20 +5,26 @@ import { ReactNode, createContext, useRef, useState } from 'react';
 export interface ModalProps {
   id: string;
   title: string;
-  data: Record<string, string | number>;
 }
 
+type OpenModalInput = {
+  content: ReactNode;
+  props: ModalProps;
+};
+
 export const ModalContext = createContext<{
-  open: (modalContent: ReactNode) => void;
+  open: (input: OpenModalInput) => void;
   close: () => void;
 } | null>(null);
 
 export const ModalProvider = ({ children }: { children: ReactNode }) => {
   const modalRef = useRef<HTMLDialogElement>(null);
   const [modalContent, setModalContent] = useState<ReactNode | null>(null);
+  const [props, setProps] = useState<ModalProps | null>(null);
 
-  const open = (modalContent: ReactNode) => {
-    setModalContent(modalContent);
+  const open = ({ content, props }: { content: ReactNode; props: ModalProps }) => {
+    setModalContent(content);
+    setProps(props);
     modalRef.current?.showModal();
   };
 
@@ -31,8 +37,10 @@ export const ModalProvider = ({ children }: { children: ReactNode }) => {
   return (
     <ModalContext.Provider value={{ open, close }}>
       <dialog
+        id={`dialog-${props?.id}`}
         ref={modalRef}
         className="h-screen w-screen border">
+        <h2>{props?.title}</h2>
         <button onClick={close}>Close</button>
         {modalContent}
       </dialog>
