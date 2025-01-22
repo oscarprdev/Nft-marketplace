@@ -26,11 +26,14 @@ hardhat_test:
 	$(HARDHAT) test
 
 # Foundry
-forge_build:
+foundry_build:
 	forge build
 
-forge_test:
+foundry_test:
 	forge test
+
+foundry_doc:
+	forge doc
 
 # Client App Commands
 .PHONY: start build lint
