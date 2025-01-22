@@ -22,7 +22,15 @@ hardhat_deploy:
 	npx hardhat ignition deploy ./ignition/modules/NFTMarketplace.ts --network localhost
 	mv ./artifacts/contracts/NFTMarketplace.sol/NFTCollection.json ./contracts
 
-hardhat_start: hardhat_node hardhat_deploy	
+hardhat_test:
+	$(HARDHAT) test
+
+# Foundry
+forge_build:
+	forge build
+
+forge_test:
+	forge test
 
 # Client App Commands
 .PHONY: start build lint

@@ -1,3 +1,4 @@
+import '@nomicfoundation/hardhat-foundry';
 import '@nomicfoundation/hardhat-toolbox-viem';
 import dotenv from 'dotenv';
 import type { HardhatUserConfig } from 'hardhat/config';
