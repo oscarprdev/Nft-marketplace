@@ -107,7 +107,7 @@ contract NFTCollection is ERC721URIStorage {
             owner: msg.sender,
             uri: _uri,
             price: _price,
-            isListed: false, // Default to not listed
+            isListed: false, /// @notice default to not listed
             timestamp: block.timestamp
         });
 
