@@ -11,7 +11,8 @@ const NFTList = () => {
   if (!nftList || nftList.length === 0) return <p>Empty values</p>;
 
   return (
-    <section className="size-10 text-white">
+    <section className="flex w-screen flex-col gap-2 p-5 text-white">
+      <h2 className="mb-5 text-4xl font-semibold">Discover</h2>
       {nftList.map(nft => (
         <NFTCard
           key={nft.tokenId}

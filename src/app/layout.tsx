@@ -2,6 +2,7 @@ import './globals.css';
 import type { Metadata } from 'next';
 import { Geist } from 'next/font/google';
 import { Toaster } from 'sonner';
+import { ModalProvider } from '~/context/modal';
 import { SmartContractProvider } from '~/context/smart-contract';
 import QueryProvider from '~/context/tanstack-query';
 
@@ -25,8 +26,10 @@ export default function RootLayout({
       <body className={`${geistSans.variable} antialiased`}>
         <QueryProvider>
           <SmartContractProvider>
-            <Toaster />
-            {children}
+            <ModalProvider>
+              <Toaster />
+              {children}
+            </ModalProvider>
           </SmartContractProvider>
         </QueryProvider>
       </body>

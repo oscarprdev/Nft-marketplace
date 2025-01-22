@@ -3,7 +3,7 @@ export interface NFTItem extends ContractNFTItem {
 }
 
 export type NFTMetadata = {
-  username: string;
+  title: string;
   description: string;
   image: string;
 };

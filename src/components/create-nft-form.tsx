@@ -10,14 +10,14 @@ import { SmartContractContext } from '~/context/smart-contract';
 import { uploadFile, uploadMetadata } from '~/lib/services';
 
 const DEFAULT_FORM_VALUES = {
-  username: '',
+  title: '',
   description: '',
   price: '',
   image: '',
 };
 
 const formValuesSchema = z.object({
-  username: z.string().max(20),
+  title: z.string().max(20),
   description: z.string().max(50),
   price: z.string().refine(
     value => {
@@ -44,9 +44,10 @@ const CreateNFTForm = () => {
 
   const onSubmit = async (formValues: FormValues) => {
     try {
-      const metadataUrl = await uploadMetadata(formValues);
+      const { title, description, image, price } = formValues;
+      const metadataUrl = await uploadMetadata({ title, description, image });
 
-      await createNFT({ metadataUrl, price: formValues.price });
+      await createNFT({ metadataUrl, price });
       toast.success('NFT created successfully');
       reset();
     } catch (error) {
@@ -104,14 +105,14 @@ const CreateNFTForm = () => {
         onSubmit={handleSubmit(onSubmit)}
         className="flex w-full flex-col items-center space-y-2">
         <label className="flex w-1/2 flex-col items-start gap-2">
-          Username
+          Title
           <input
             className="px-3 py-2"
-            placeholder="Enter your username"
-            {...register('username')}
+            placeholder="Enter your title"
+            {...register('title')}
           />
-          {formState.errors.username && (
-            <p className="text-xs text-red-500">{formState.errors.username.message}</p>
+          {formState.errors.title && (
+            <p className="text-xs text-red-500">{formState.errors.title.message}</p>
           )}
         </label>
         <label className="flex w-1/2 flex-col items-start gap-2">
