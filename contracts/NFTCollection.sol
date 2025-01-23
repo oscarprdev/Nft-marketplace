@@ -265,11 +265,13 @@ contract NFTCollection is ERC721URIStorage {
         delete offersByNftID[_offer.tokenId][_offerId];
         delete offersByOwnerID[_offer.buyer][_offer.tokenId];
         delete offers[_offerId];
-        removeNFTFromOwner(msg.sender, _offer.tokenId);
         removeOfferFromOwner(_offer.buyer, _offer.offerId);
 
-        /// @dev update nft owner
-        _nft.owner = msg.sender;
+        /// @dev remove nft from the old owner
+        removeNFTFromOwner(msg.sender, _offer.tokenId);
+
+        /// @dev update nft owner with buyer
+        _nft.owner = _offer.buyer;
         nfts[_offer.tokenId] = _nft;
         nftIDsByOwnerID[_offer.buyer].push(_nft.tokenId);
 
