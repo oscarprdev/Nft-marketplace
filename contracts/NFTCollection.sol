@@ -5,7 +5,6 @@ import "@openzeppelin/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import "hardhat/console.sol";
 
-
 /// @title NFTCollection
 /// @author @Oscarprdev
 /// @dev A simple NFT collection contrac
@@ -52,25 +51,28 @@ contract NFTCollection is ERC721URIStorage {
     }
 
     /// @notice nft list
-    mapping(uint256 => NFT) private nftList;
+    mapping(uint256 => NFT) private nfts;
 
-    /// @notice nft offers mapping
+    /// @notice nft offers
     mapping(uint256 => NFTOffer) private offers;
 
-    /// @notice nft list by owner mapping
-    mapping(address => mapping(uint256 => NFT)) private nftListByOwner;
+    /// @notice nft list by owner
+    mapping(address => mapping(uint256 => NFT)) private nftsByOwnerID;
 
-    /// @notice nft ids list by owner mapping
-    mapping(address => uint256[]) private ownedTokenIds;
+    /// @notice nft IDs by owner id
+    mapping(address => uint256[]) private nftIDsByOwnerID;
 
-    /// @notice nft offers by owner mapping
-    mapping(address => mapping(uint256 => NFTOffer)) private nftOffersByUser;
+    /// @notice nft offers by owner
+    mapping(address => mapping(uint256 => NFTOffer)) private offersByOwnerID;
 
-    /// @notice offers ids list by owner mapping
-    mapping(address => uint256[]) private ownedOffersIds;
+    /// @notice offers ids list by owner IDs
+    mapping(address => uint256[]) private offersIDsByOwnerID;
 
     /// @notice nft offers by nft item
-    mapping(uint256 => mapping(uint256 => NFTOffer)) private nftOffersByNft;
+    mapping(uint256 => mapping(uint256 => NFTOffer)) private offersByNftID;
+
+    /// @notice Offers IDs by NFT ID
+    mapping(uint256 => uint256[]) private offersIdsByNFTID;
 
     /// @notice event emitted when a new NFT is minted
     /// @param owner Owner address
@@ -100,7 +102,6 @@ contract NFTCollection is ERC721URIStorage {
     /// @param offerId Offer ID 
     event NFTOfferCanceled(uint256 indexed offerId);
 
-     
     /// @notice event emitted when an NFT is set as listed
     /// @param tokenId Token ID 
     event NFTSetAsListed(uint256 indexed tokenId);
@@ -128,7 +129,7 @@ contract NFTCollection is ERC721URIStorage {
     /// @notice modifier to check if the NFT exists
     /// @param _tokenId Token ID
     modifier NFTExists(uint256 _tokenId) {
-        if (nftList[_tokenId].tokenId == 0) {
+        if (nfts[_tokenId].tokenId == 0) {
             revert NFTDoesNotExist(_tokenId);
         }
         _;
@@ -150,7 +151,6 @@ contract NFTCollection is ERC721URIStorage {
     }
 
     /// @notice mints a new NFT
-    /// @dev mints a new NFT with the given URI and price
     /// @param _uri URI of the NFT
     /// @param _price Price of the NFT     
     function mintNFT(string memory _uri, uint256 _price) external onlyOwner {
@@ -158,19 +158,20 @@ contract NFTCollection is ERC721URIStorage {
          require(_price > 0, "Price must be greater than zero");
 
          NFTTokenIdCounter++;
-         NFT memory newNFT = NFT({
+         NFT memory _nft = NFT({
             tokenId: NFTTokenIdCounter,
             creator: msg.sender,
             owner: msg.sender,
             uri: _uri,
             price: _price,
-            isListed: false, /// @notice default to not listed
+            isListed: false, /// @dev default to not listed
             timestamp: block.timestamp
         });
 
-        nftList[NFTTokenIdCounter] = newNFT;
-        nftListByOwner[msg.sender][NFTTokenIdCounter] = newNFT;
-        ownedTokenIds[msg.sender].push(NFTTokenIdCounter);
+        nfts[NFTTokenIdCounter] = _nft;
+
+        nftsByOwnerID[msg.sender][NFTTokenIdCounter] = _nft;
+        nftIDsByOwnerID[msg.sender].push(NFTTokenIdCounter);
 
         _safeMint(msg.sender, NFTTokenIdCounter);
         _setTokenURI(NFTTokenIdCounter, _uri);
@@ -179,39 +180,34 @@ contract NFTCollection is ERC721URIStorage {
     }
 
     /// @notice removes an NFT
-    /// @dev removes an NFT with the given token ID
     /// @param _owner Owner address
     /// @param _tokenId Token ID
     function removeNFT(address _owner, uint256 _tokenId) private NFTExists(_tokenId) {
-        for (uint256 i =0; i < offersCount; i++) {
-            if (offers[i].tokenId == _tokenId) {
-                uint256 _offerId = offers[i].offerId;
+        require(msg.sender == nfts[_tokenId].owner, "Only NFT owner can remove NFT");
 
-                delete nftOffersByNft[_tokenId][_offerId];
-                delete offers[_offerId];
-            }
+        /// @dev delete offers related with the nft
+        uint256[] memory _offersIds = offersIdsByNFTID[_tokenId];
+        for (uint256 i = 0; i < _offersIds.length; i++) {
+            uint256 _offerId = _offersIds[i];
+
+            delete offersByNftID[_tokenId][_offerId];
+            delete offersByOwnerID[msg.sender][_offerId];
+            delete offers[_offerId];
+            removeOfferFromNFT(_tokenId, _offerId);
+            removeOfferFromOwner(msg.sender, _offerId);
         }
         
-        delete nftListByOwner[_owner][_tokenId];
-        delete nftOffersByUser[msg.sender][_tokenId];
+        /// @dev delete nft from mappings
+        delete nfts[_tokenId];
+        delete nftsByOwnerID[_owner][_tokenId];
         removeNFTFromOwner(_owner, _tokenId);
-        
-        uint256[] storage tokenIds = ownedTokenIds[_owner];
-        for (uint256 i = 0; i < tokenIds.length; i++) {
-            if (tokenIds[i] == _tokenId) {
-                tokenIds[i] = tokenIds[tokenIds.length - 1];
-                tokenIds.pop();
-                break;
-            }
-        }
     }
 
     /// @notice creates an NFT offer
-    /// @dev creates an NFT offer with the given token ID
     /// @param _tokenId Token ID     
     function createOffer(uint256 _tokenId) external payable NFTExists(_tokenId) {
         require(msg.value > 0, "Price must be greater than zero");
-        require(nftList[_tokenId].isListed, "NFT is not listed for sale");
+        require(nfts[_tokenId].isListed, "NFT is not listed for sale");
 
         offersCount++;
         NFTOffer memory newOffer = NFTOffer({
@@ -222,10 +218,11 @@ contract NFTCollection is ERC721URIStorage {
             expirationDate: block.timestamp + 1 days
         });
 
+        /// @dev add offer to mappings
         offers[offersCount] = newOffer;
-        nftOffersByUser[msg.sender][_tokenId] = newOffer;
-        nftOffersByNft[_tokenId][offersCount] = newOffer;
-        ownedOffersIds[msg.sender].push(offersCount);
+        offersByOwnerID[msg.sender][offersCount] = newOffer;
+        offersByNftID[_tokenId][offersCount] = newOffer;
+        offersIDsByOwnerID[msg.sender].push(offersCount);
 
         emit NFTOfferCreated(
             msg.sender, 
@@ -239,63 +236,68 @@ contract NFTCollection is ERC721URIStorage {
     /// @dev cancels an NFT offer with the given offer ID     
     /// @param _offerId Offer ID
     function cancelOffer(uint256 _offerId) external NFTOfferExists(_offerId) {
-        NFTOffer memory nftOffer = offers[_offerId];
-        NFT memory nft = nftList[nftOffer.tokenId];
+        NFTOffer memory _nftOffer = offers[_offerId];
+        NFT memory _nft = nfts[_nftOffer.tokenId];
 
-        require(msg.sender == nftOffer.buyer, "Only buyer can cancel offer");
+        require(msg.sender == _nftOffer.buyer, "Only buyer can cancel offer");
+        require(_nft.isListed, "Only listed NFT can be canceled");
 
-        delete nftOffersByNft[nft.tokenId][_offerId];
-        delete nftOffersByUser[msg.sender][nftOffer.tokenId];
+        /// @dev delete offers related with the nft
+        delete offersByNftID[_nft.tokenId][_offerId];
+        delete offersByOwnerID[msg.sender][_nftOffer.tokenId];
         delete offers[_offerId];
         removeOfferFromOwner(msg.sender, _offerId);
+        removeOfferFromNFT(_nft.tokenId, _offerId);
         
         emit NFTOfferCanceled(_offerId);
     }
 
     /// @notice accepts an NFT offer
-    /// @dev accepts an NFT offer with the given offer ID
     /// @param _offerId Offer ID
     function acceptOffer(uint256 _offerId) external payable NFTOfferExists(_offerId) {
-        NFTOffer memory nftOffer = offers[_offerId];
-        NFT memory nft = nftList[nftOffer.tokenId];
+        NFTOffer memory _offer = offers[_offerId];
+        NFT memory _nft = nfts[_offer.tokenId];
 
-        require(msg.sender == nftOffer.buyer, "Only buyer can accept offer");
-        require(nftOffer.expirationDate > block.timestamp, "Offer has expired");
+        require(msg.sender == _offer.buyer, "Only buyer can accept offer");
+        require(_offer.expirationDate > block.timestamp, "Offer has expired");
 
-        delete nftOffersByNft[nftOffer.tokenId][_offerId];
-        delete nftOffersByUser[nftOffer.buyer][nftOffer.tokenId];
+        /// @dev delete offers related with the nft
+        delete offersByNftID[_offer.tokenId][_offerId];
+        delete offersByOwnerID[_offer.buyer][_offer.tokenId];
         delete offers[_offerId];
-        removeNFTFromOwner(msg.sender, nftOffer.tokenId);
-        removeOfferFromOwner(nftOffer.buyer, nftOffer.offerId);
+        removeNFTFromOwner(msg.sender, _offer.tokenId);
+        removeOfferFromOwner(_offer.buyer, _offer.offerId);
 
-        nft.owner = msg.sender;
-        nftList[nftOffer.tokenId] = nft;
-        ownedTokenIds[nftOffer.buyer].push(nftOffer.tokenId);
+        /// @dev update nft owner
+        _nft.owner = msg.sender;
+        nfts[_offer.tokenId] = _nft;
+        nftIDsByOwnerID[_offer.buyer].push(_nft.tokenId);
 
-        (bool success,) = payable(msg.sender).call{value: nftOffer.price}("");
+        /// @dev send Ether to NFT owner
+        (bool success,) = payable(msg.sender).call{value: _offer.price}("");
         require(success, "Failed to send Ether to NFT owner");
 
         emit NFTOfferAccepted(        
-            nftOffer.buyer,
-            nftOffer.tokenId,
+            _offer.buyer,
+            _offer.tokenId,
             _offerId
         );
     }
 
     /// @notice sets an NFT as listed for sale
-    /// @dev sets an NFT as listed for sale
     /// @param _tokenId Token ID
     function setNFTAsListed(uint256 _tokenId) external NFTExists(_tokenId) {
-         NFT storage nft = nftList[_tokenId];
-        require(msg.sender == nft.owner, "Only NFT owner can set as listed");
+        NFT storage _nft = nfts[_tokenId];
+        require(!_nft.isListed, "NFT is already listed");
+        require(msg.sender == _nft.owner, "Only NFT owner can set as listed");
        
-        nft.isListed = true;
+        _nft.isListed = true;
+        nfts[_tokenId] = _nft;
 
         emit NFTSetAsListed(_tokenId);
     }
 
     /// @notice gets all NFTs
-    /// @dev gets all NFTs
     /// @param _offset Offset
     /// @param _limit Limit
     /// @return nfts NFTs
@@ -305,43 +307,47 @@ contract NFTCollection is ERC721URIStorage {
         require(_limit > _offset, "Limit must be greater than offset");
         require(_limit <= NFTTokenIdCounter, "Limit must be less than total NFTs");
 
-        uint256 itemsToReturn = _limit - _offset + 1;
-        NFT[] memory nfts = new NFT[](itemsToReturn);
+        uint256 _length = _limit - _offset + 1;
+        NFT[] memory _nfts = new NFT[](_length);
 
-        for (uint256 i = _offset; i < _limit; i++) {
-            nfts[i - 1] = nftList[i];
+        for (uint256 i = _offset; i < _length; i++) {
+            _nfts[i - 1] = nfts[i];
         }
 
-        return nfts;
+        return _nfts;
     }
 
     /// @notice gets an NFT by ID
-    /// @dev gets an NFT by ID
     /// @param _tokenId Token ID
     /// @return nft NFT
     function getNFTById(uint256 _tokenId) external view NFTExists(_tokenId) returns (NFT memory) {
-        return nftList[_tokenId];
+        return nfts[_tokenId];
     }
 
     /// @notice gets an NFT by owner
-    /// @dev gets an NFT by owner
     /// @param _owner Owner address
     /// @param _tokenId Token ID
     /// @return nft NFT
     function getNFTByOwner(address _owner, uint256 _tokenId) external view returns (NFT memory) {
-        return nftListByOwner[_owner][_tokenId];
+        return nftsByOwnerID[_owner][_tokenId];
     }
 
     /// @notice gets all NFTs by owner
-    /// @dev gets all NFTs by owner
     /// @param _owner Owner address
     /// @return items NFTs by owner
-    function getNFTsByOwner(address _owner) external view returns (NFT[] memory) {
-        require(false, "Not implemented");
+    function getAllNFTByOwner(address _owner) external view returns (NFT[] memory) {
+        uint256[] memory _tokenIDs = nftIDsByOwnerID[_owner];
+        uint256 _length = _tokenIDs.length;
+        NFT[] memory _nfts = new NFT[](_length);
+
+        for (uint256 i = 0; i < _length; i++) {
+            _nfts[i] = nftsByOwnerID[_owner][_tokenIDs[i]];
+        }
+
+        return _nfts;
     }
 
     /// @notice gets all NFT offers
-    /// @dev gets all NFT offers
     /// @param _offset Offset
     /// @param _limit Limit
     /// @return offers Offers
@@ -351,18 +357,17 @@ contract NFTCollection is ERC721URIStorage {
         require(_limit > _offset, "Limit must be greater than offset");
         require(_limit <= offersCount, "Limit must be less than total NFTs");
 
-        uint256 itemsToReturn = _limit - _offset + 1;
-        NFTOffer[] memory offersToReturn = new NFTOffer[](itemsToReturn);
+        uint256 _length = _limit - _offset + 1;
+        NFTOffer[] memory _offers = new NFTOffer[](_length);
 
-        for (uint256 i = _offset; i < _limit; i++) {
-            offersToReturn[i - 1] = offers[i];
+        for (uint256 i = _offset; i < _length; i++) {
+            _offers[i - 1] = offers[i];
         }
 
-        return offersToReturn;
+        return _offers;
     }
 
     /// @notice gets an NFT offer by ID
-    /// @dev gets an NFT offer by ID
     /// @param _offerId Offer ID     
     /// @return offer Offer
     function getOfferById(uint256 _offerId) external view NFTOfferExists(_offerId) returns (NFTOffer memory) {
@@ -370,47 +375,86 @@ contract NFTCollection is ERC721URIStorage {
     }
 
     /// @notice gets an NFT offer by owner
-    /// @dev gets an NFT offer by owner
     /// @param _owner Owner address
     /// @param _offerId Offer ID
     /// @return offer Offer
     function getOfferByOwner(address _owner, uint256 _offerId) external view returns (NFTOffer memory) {
-        return nftOffersByUser[_owner][_offerId];
+        return offersByOwnerID[_owner][_offerId];
     }
 
-    function getOffersByOwner(address _owner) external view returns (NFTOffer[] memory) {
-        require(false, "Not implemented");
+    /// @notice gets all offers by owner
+    /// @param _owner Owner address
+    /// @return offers Offers
+    function getAllOffersByOwnerID(address _owner) external view returns (NFTOffer[] memory) {
+        uint256[] memory _offerIDs = offersIDsByOwnerID[_owner];
+        uint256 _length = _offerIDs.length;
+        NFTOffer[] memory _offers = new NFTOffer[](_length);
+
+        for (uint256 i = 0; i < _length; i++) {
+            _offers[i] = offersByOwnerID[_owner][_offerIDs[i]];
+        }
+
+        return _offers;
     }
 
-    function getOffersByNft(uint256 _tokenId) external view returns (NFTOffer[] memory) {
-        require(false, "Not implemented");
+    /// @notice gets all offers by NFT
+    /// @param _tokenId Token ID
+    /// @return offers Offers   
+    function getAllOffersByNft(uint256 _tokenId) external view returns (NFTOffer[] memory) {
+        uint256[] memory _offerIDs = offersIdsByNFTID[_tokenId];
+        uint256 _length = _offerIDs.length;
+        NFTOffer[] memory _offers = new NFTOffer[](_length);
+
+        for (uint256 i = 0; i < _length; i++) {
+            _offers[i] = offers[_offerIDs[i]];
+        }
+
+        return _offers;
     }
 
     /// @notice removes an NFT from owner
-    /// @dev removes an NFT from owner
     /// @param _owner Owner address to remove NFT from
     /// @param _tokenId Token ID to remove
     function removeNFTFromOwner(address _owner, uint256 _tokenId) private NFTExists(_tokenId) {
-        uint256[] storage tokenIds = ownedTokenIds[_owner];
-        for (uint256 i = 0; i < tokenIds.length; i++) {
-            if (tokenIds[i] == _tokenId) {
-                tokenIds[i] = tokenIds[tokenIds.length - 1];
-                tokenIds.pop();
+        uint256[] storage _tokenIDs = nftIDsByOwnerID[_owner];
+        uint256 _length = _tokenIDs.length;
+
+        for (uint256 i = 0; i < _length; i++) {
+            if (_tokenIDs[i] == _tokenId) {
+                _tokenIDs[i] = _tokenIDs[_length - 1];
+                _tokenIDs.pop();
                 break;
             }
         }
     }
 
     /// @notice removes an Offer from owner
-    /// @dev removes an Offer from owner
     /// @param _owner Owner address to remove Offer from
     /// @param _offerId Offer ID to remove
     function removeOfferFromOwner(address _owner, uint256 _offerId) private NFTOfferExists(_offerId) {
-        uint256[] storage offersIds = ownedOffersIds[_owner];
-        for (uint256 i = 0; i < offersIds.length; i++) {
-            if (offersIds[i] == _offerId) {
-                offersIds[i] = offersIds[offersIds.length - 1];
-                offersIds.pop();
+        uint256[] storage _offerIDs = offersIDsByOwnerID[_owner];
+        uint256 _length = _offerIDs.length;
+
+        for (uint256 i = 0; i < _length; i++) {
+            if (_offerIDs[i] == _offerId) {
+                _offerIDs[i] = _offerIDs[_length - 1];
+                _offerIDs.pop();
+                break;
+            }
+        }
+    }
+
+    /// @notice removes an Offer from NFT
+    /// @param _tokenId Token ID to remove Offer from    
+    /// @param _offerId Offer ID to remove
+    function removeOfferFromNFT(uint256 _tokenId, uint256 _offerId) private NFTExists(_tokenId) {
+        uint256[] storage _offerIDs = offersIdsByNFTID[_tokenId];
+        uint256 _length = _offerIDs.length;
+
+        for (uint256 i = 0; i < _length; i++) {
+            if (_offerIDs[i] == _offerId) {
+                _offerIDs[i] = _offerIDs[_length - 1];
+                _offerIDs.pop();
                 break;
             }
         }
