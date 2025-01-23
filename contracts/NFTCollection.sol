@@ -310,17 +310,16 @@ contract NFTCollection is ERC721URIStorage {
     /// @param _offset Offset
     /// @param _limit Limit
     /// @return nfts NFTs
-    function getNfts(uint256 _offset, uint256 _limit) external view returns (NFT[] memory) {
-        require(_offset > 0, "Offset must be greater than zero");
-        require(_limit > 0, "Limit must be greater than zero");
+    function getNFTs(uint256 _offset, uint256 _limit) external view returns (NFT[] memory) {
+        require(_offset >= 0, "Offset must be a positive number");
         require(_limit > _offset, "Limit must be greater than offset");
         require(_limit <= NFTTokenIdCounter, "Limit must be less than total NFTs");
 
         uint256 _length = _limit - _offset + 1;
         NFT[] memory _nfts = new NFT[](_length);
 
-        for (uint256 i = _offset; i < _length; i++) {
-            _nfts[i - 1] = nfts[i];
+        for (uint256 i = 0; i < _length; i++) {
+            _nfts[i] = nfts[_offset + i];
         }
 
         return _nfts;
@@ -337,7 +336,7 @@ contract NFTCollection is ERC721URIStorage {
     /// @param _owner Owner address
     /// @param _tokenId Token ID
     /// @return nft NFT
-    function getNFTByOwner(address _owner, uint256 _tokenId) external view returns (NFT memory) {
+    function getNFTByOwner(address _owner, uint256 _tokenId) external view NFTExists(_tokenId) returns (NFT memory) {
         return nftsByOwnerID[_owner][_tokenId];
     }
 
@@ -361,16 +360,15 @@ contract NFTCollection is ERC721URIStorage {
     /// @param _limit Limit
     /// @return offers Offers
     function getOffers(uint256 _offset, uint256 _limit) external view returns (NFTOffer[] memory) {
-        require(_offset > 0, "Offset must be greater than zero");
-        require(_limit > 0, "Limit must be greater than zero");
+        require(_offset >= 0, "Offset must be greater than zero");
         require(_limit > _offset, "Limit must be greater than offset");
         require(_limit <= offersCount, "Limit must be less than total NFTs");
 
         uint256 _length = _limit - _offset + 1;
         NFTOffer[] memory _offers = new NFTOffer[](_length);
 
-        for (uint256 i = _offset; i < _length; i++) {
-            _offers[i - 1] = offers[i];
+        for (uint256 i = 0; i < _length; i++) {
+            _offers[i] = offers[_offset + i];
         }
 
         return _offers;

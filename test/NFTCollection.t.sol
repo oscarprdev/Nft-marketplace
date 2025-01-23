@@ -108,7 +108,7 @@ contract NFTCollectionTest is Test, IERC721Receiver {
         nftCollection.removeNFT(address(this), 1);
     }
 
-    /// @notice setNFTAsListed should set the NFT as listed
+    /// @dev setNFTAsListed should set the NFT as listed
     function testSetNFTasListed() external {
         string memory _uri = "test-uri";
         uint256 _price = 0.01 ether;
@@ -129,13 +129,13 @@ contract NFTCollectionTest is Test, IERC721Receiver {
         assertEq(nft.isListed, true);
     }
 
-    /// @notice setNFTAsListed should revert if the NFT does not exist
+    /// @dev setNFTAsListed should revert if the NFT does not exist
     function testSetNFTasListed_NFTDoesNotExist() external {
         vm.expectRevert(abi.encodeWithSelector(NFTDoesNotExist.selector, 1));
         nftCollection.setNFTAsListed(1);
     }
 
-    /// @notice setNFTAsListed should revert if the NFT is already listed
+    /// @dev setNFTAsListed should revert if the NFT is already listed
     function testSetNFTasListed_NFTAlreadyListed() external {
         string memory _uri = "test-uri";
         uint256 _price = 0.01 ether;
@@ -157,7 +157,7 @@ contract NFTCollectionTest is Test, IERC721Receiver {
         nftCollection.setNFTAsListed(1);
     }
 
-    /// @notice setNFTAsListed should revert if the caller is not the owner of the NFT
+    /// @dev setNFTAsListed should revert if the caller is not the owner of the NFT
     function testSetNFTasListed_NotOwner() external {
         string memory _uri = "test-uri";
         uint256 _price = 0.01 ether;
@@ -174,7 +174,7 @@ contract NFTCollectionTest is Test, IERC721Receiver {
         nftCollection.setNFTAsListed(1);
     }
 
-    /// @notice createOffer should add a offer to the offer's list
+    /// @dev createOffer should add a offer to the offer's list
     function testCreateOffer() external {
         string memory _uri = "test-uri";
         uint256 _price = 0.01 ether;
@@ -204,13 +204,13 @@ contract NFTCollectionTest is Test, IERC721Receiver {
         assertEq(_offer.buyer, address(0xBEEF));
     }
 
-    /// @notice createOffer should rever if NFT does not exist
+    /// @dev createOffer should rever if NFT does not exist
     function testCreateOffer_NFTDoesNotExist() external {
         vm.expectRevert(abi.encodeWithSelector(NFTDoesNotExist.selector, 1));
         nftCollection.createOffer(1);
     } 
 
-    /// @notice createOffer should revert if NFT is not listed
+    /// @dev createOffer should revert if NFT is not listed
     function testCreateOffer_PriceIsLow() external {
         string memory _uri = "test-uri";
         uint256 _price = 2 ether;
@@ -225,7 +225,7 @@ contract NFTCollectionTest is Test, IERC721Receiver {
         nftCollection.createOffer{ value: 1 ether }(_tokenId);
     }
 
-    /// @notice createOffer should revert if NFT is not listed
+    /// @dev createOffer should revert if NFT is not listed
     function testCreateOffer_NFTNotListed() external {
         string memory _uri = "test-uri";
         uint256 _price = 1 ether;
@@ -238,7 +238,7 @@ contract NFTCollectionTest is Test, IERC721Receiver {
         nftCollection.createOffer{ value: 2 ether }(_tokenId);
     }
 
-    /// @notice createOffer should revert if owner creates offer
+    /// @dev createOffer should revert if owner creates offer
     function testCreateOffer_OwnerCannotCreateOffer() external {
         string memory _uri = "test-uri";
         uint256 _price = 1 ether;
@@ -252,7 +252,7 @@ contract NFTCollectionTest is Test, IERC721Receiver {
         nftCollection.createOffer{ value: 2 ether }(_tokenId);
     }
 
-    /// @notice cancelOffer should cancel an offer
+    /// @dev cancelOffer should cancel an offer
     function testCancelOffer() external {
         string memory _uri = "test-uri";
         uint256 _price = 1 ether;
@@ -277,13 +277,13 @@ contract NFTCollectionTest is Test, IERC721Receiver {
         nftCollection.cancelOffer(1);
     }
 
-    /// @notice cancelOffer should revert if offer does not exist
+    /// @dev cancelOffer should revert if offer does not exist
     function testCancelOffer_OfferDoesNotExist() external {
         vm.expectRevert(abi.encodeWithSelector(OfferDoesNotExist.selector, 1));
         nftCollection.cancelOffer(1);
     }
 
-    /// @notice cancelOffer should revert if sender is not the owner of the offer
+    /// @dev cancelOffer should revert if sender is not the owner of the offer
     function testCancelOffer_SenderIsNotOwner() external {
         string memory _uri = "test-uri";
         uint256 _price = 1 ether;
@@ -301,7 +301,7 @@ contract NFTCollectionTest is Test, IERC721Receiver {
         nftCollection.cancelOffer(1);
     }
 
-    /// @notice acceptOffer should accept an offer
+    /// @dev acceptOffer should accept an offer
     function testAcceptOffer() external {
         string memory _uri = "test-uri";
         uint256 _price = 1 ether;
@@ -326,13 +326,13 @@ contract NFTCollectionTest is Test, IERC721Receiver {
         nftCollection.acceptOffer(1);
     }
 
-    /// @notice acceptOffer should revert if offer does not exist
+    /// @dev acceptOffer should revert if offer does not exist
     function testAcceptOffer_OfferDoesNotExist() external {
         vm.expectRevert(abi.encodeWithSelector(OfferDoesNotExist.selector, 1));
         nftCollection.acceptOffer(1);
     }
 
-    /// @notice acceptOffer should revert if sender is not the owner of the offer
+    /// @dev acceptOffer should revert if sender is not the owner of the offer
     function testAcceptOffer_SenderIsNotOwner() external {
         string memory _uri = "test-uri";
         uint256 _price = 1 ether;
@@ -350,7 +350,7 @@ contract NFTCollectionTest is Test, IERC721Receiver {
         nftCollection.acceptOffer(1);
     }
 
-    /// @notice acceptOffer should revert if offer has expired
+    /// @dev acceptOffer should revert if offer has expired
     function testAcceptOffer_OfferHasExpired() external {
         string memory _uri = "test-uri";
         uint256 _price = 1 ether;
@@ -368,5 +368,186 @@ contract NFTCollectionTest is Test, IERC721Receiver {
         vm.expectRevert("Offer has expired");
         vm.prank(address(0xBEEF));
         nftCollection.acceptOffer(1);
+    }
+
+    /// @dev getNFTs should return the NFTs by offets and limit
+    function testGetNFTs() external {
+        string memory _uri = "test-uri";
+        uint256 _price = 1 ether;
+
+        for (uint256 i = 0; i < 5; i++) {
+            nftCollection.mintNFT(_uri, _price);
+        }
+        
+        uint256 _offset = 2;
+        uint256 _limit = 4;
+
+        NFTCollection.NFT[] memory _nfts = nftCollection.getNFTs(_offset, _limit);
+        assertEq(_nfts.length, 3);
+        assertEq(_nfts[0].tokenId, 2);
+        assertEq(_nfts[1].tokenId, 3);
+        assertEq(_nfts[2].tokenId, 4);
+    }
+
+    /// @dev getNFTs should revert if limit is not greater than offset
+    function testGetNFTs_LimitNotValid() external {
+        string memory _uri = "test-uri";
+        uint256 _price = 1 ether;
+
+        for (uint256 i = 0; i < 5; i++) {
+            nftCollection.mintNFT(_uri, _price);
+        }
+
+        uint256 _offset = 2;
+        uint256 _limit = 1;
+
+        vm.expectRevert("Limit must be greater than offset");
+        nftCollection.getNFTs(_offset - 1, _limit);
+    }
+
+    /// @dev getNFTs should revert if limit is greater than NFTs
+    function testGetNFTs_LimitNotMatchWithNFTs() external {
+        string memory _uri = "test-uri";
+        uint256 _price = 1 ether;
+        uint256 _maxLimit = 2;
+
+        for (uint256 i = 0; i < _maxLimit; i++) {
+            nftCollection.mintNFT(_uri, _price);
+        }
+
+        uint256 _offset = 2;
+        uint256 _limit = _maxLimit + 1;
+
+        vm.expectRevert("Limit must be less than total NFTs");
+        nftCollection.getNFTs(_offset - 1, _limit);
+    }
+
+    /// @dev getNFTById should return the NFT by id
+    function getNFTById() external {
+        string memory _uri = "test-uri";
+        uint256 _price = 1 ether;
+        nftCollection.mintNFT(_uri, _price);
+
+        NFTCollection.NFT memory _nft = nftCollection.getNFTById(1);
+        assertEq(_nft.tokenId, 1);
+    }
+    
+    /// @dev getNFTById should revert if NFT does not exist
+    function testGetNFTById_NFTDoesNotExist() external {
+        vm.expectRevert(abi.encodeWithSelector(NFTDoesNotExist.selector, 1));
+        nftCollection.getNFTById(1);
+    }
+
+    /// @dev getNFTByOwner should return the NFT by owner
+    function getNFTByOwner() external {
+        string memory _uri = "test-uri";
+        uint256 _price = 1 ether;
+        nftCollection.mintNFT(_uri, _price);
+
+        NFTCollection.NFT memory _nft = nftCollection.getNFTByOwner(address(this), 1);
+        assertEq(_nft.tokenId, 1);
+    }
+    
+    /// @dev getNFTByOwner should revert if NFT does not exist
+    function testGetNFTByOwner_NFTDoesNotExist() external {
+        vm.expectRevert(abi.encodeWithSelector(NFTDoesNotExist.selector, 1));
+        nftCollection.getNFTByOwner(address(this), 1);
+    }
+
+    /// @dev getAllNFTByOwner should return the NFTs by owner
+    function testGetAllNFTByOwner() external {
+        string memory _uri = "test-uri";
+        uint256 _price = 1 ether;
+
+        for (uint256 i = 0; i < 3; i++) {
+            nftCollection.mintNFT(_uri, _price);
+        }
+
+        NFTCollection.NFT[] memory _nfts = nftCollection.getAllNFTByOwner(address(this));
+        assertEq(_nfts.length, 3);
+        assertEq(_nfts[0].tokenId, 1);
+        assertEq(_nfts[1].tokenId, 2);
+        assertEq(_nfts[2].tokenId, 3);
+    }
+
+    /// @dev getOffers should return offers by offset and limit
+    function testGetOffers() external {
+        string memory _uri = "test-uri";
+        uint256 _price = 0.5 ether;
+
+        for (uint256 i = 0; i < 4; i++) {
+            nftCollection.mintNFT(_uri, _price);
+        }
+
+        for (uint256 i = 0; i < 4; i++) {
+            nftCollection.setNFTAsListed(i + 1);
+        }
+
+        for (uint256 i = 0; i < 4; i++) {
+            vm.prank(address(0xBEEF));
+            vm.deal(address(0xBEEF), 5 ether);
+            nftCollection.createOffer{ value: 1 ether }(i + 1);
+        }
+
+        uint256 _offset = 2;
+        uint256 _limit = 4;
+
+        NFTCollection.NFTOffer[] memory _offers = nftCollection.getOffers(_offset, _limit);
+        assertEq(_offers.length, 3);
+        assertEq(_offers[0].tokenId, 2);
+        assertEq(_offers[1].tokenId, 3);
+        assertEq(_offers[2].tokenId, 4);
+    }
+
+    /// @dev getOffers should revert if limit is not greater than offset
+    function testGetOffers_LimitNotValid() external {
+        string memory _uri = "test-uri";
+        uint256 _price = 0.5 ether;
+
+        for (uint256 i = 0; i < 4; i++) {
+            nftCollection.mintNFT(_uri, _price);
+        }
+
+        for (uint256 i = 0; i < 4; i++) {
+            nftCollection.setNFTAsListed(i + 1);
+        }
+
+        for (uint256 i = 0; i < 4; i++) {
+            vm.prank(address(0xBEEF));
+            vm.deal(address(0xBEEF), 5 ether);
+            nftCollection.createOffer{ value: 1 ether }(i + 1);
+        }
+
+        uint256 _offset = 2;
+        uint256 _limit = 1;
+
+        vm.expectRevert("Limit must be greater than offset");
+        nftCollection.getOffers(_offset - 1, _limit);
+    }
+
+    /// @dev getOffers should revert if limit is greater than NFTs
+    function testGetOffers_LimitNotMatchWithNFTs() external {
+        string memory _uri = "test-uri";
+        uint256 _price = 0.5 ether;
+
+        for (uint256 i = 0; i < 4; i++) {
+            nftCollection.mintNFT(_uri, _price);
+        }
+
+        for (uint256 i = 0; i < 4; i++) {
+            nftCollection.setNFTAsListed(i + 1);
+        }
+
+        for (uint256 i = 0; i < 4; i++) {
+            vm.prank(address(0xBEEF));
+            vm.deal(address(0xBEEF), 5 ether);
+            nftCollection.createOffer{ value: 1 ether }(i + 1);
+        }
+
+        uint256 _offset = 2;
+        uint256 _limit = 4 + 1;
+
+        vm.expectRevert("Limit must be less than total NFTs");
+        nftCollection.getOffers(_offset - 1, _limit);
     }
 }
