@@ -78,6 +78,11 @@ contract NFTCollection is ERC721URIStorage {
     /// @param owner Owner address
     /// @param tokenId Token ID
     event NFTMinted(address indexed owner, uint256 indexed tokenId);
+    
+    /// @notice event emitted when an NFT is removed    
+    /// @param owner Owner address
+    /// @param tokenId Token ID
+    event NFTRemoved(address indexed owner, uint256 indexed tokenId);
 
     /// @notice event emitted when an NFT is sold     
     /// @param from Seller address
@@ -106,13 +111,13 @@ contract NFTCollection is ERC721URIStorage {
     /// @param tokenId Token ID 
     event NFTSetAsListed(uint256 indexed tokenId);
 
-    /// @notice error thrown when an offer does not exist
-    /// @param offerId Offer ID
-    error OfferDoesNotExist(uint256 offerId);
-
     /// @notice error thrown when an NFT does not exist
     /// @param tokenId Token ID
     error NFTDoesNotExist(uint256 tokenId);
+
+    /// @notice error thrown when an offer does not exist
+    /// @param offerId Offer ID
+    error OfferDoesNotExist(uint256 offerId);
 
     /// @notice error thrown when a user does not exist
     /// @param user User address
@@ -129,7 +134,7 @@ contract NFTCollection is ERC721URIStorage {
     /// @notice modifier to check if the NFT exists
     /// @param _tokenId Token ID
     modifier NFTExists(uint256 _tokenId) {
-        if (nfts[_tokenId].tokenId == 0) {
+        if (_tokenId > NFTTokenIdCounter || _tokenId == 0) {
             revert NFTDoesNotExist(_tokenId);
         }
         _;
@@ -182,7 +187,7 @@ contract NFTCollection is ERC721URIStorage {
     /// @notice removes an NFT
     /// @param _owner Owner address
     /// @param _tokenId Token ID
-    function removeNFT(address _owner, uint256 _tokenId) private NFTExists(_tokenId) {
+    function removeNFT(address _owner, uint256 _tokenId) external NFTExists(_tokenId) {
         require(msg.sender == nfts[_tokenId].owner, "Only NFT owner can remove NFT");
 
         /// @dev delete offers related with the nft
@@ -201,13 +206,16 @@ contract NFTCollection is ERC721URIStorage {
         delete nfts[_tokenId];
         delete nftsByOwnerID[_owner][_tokenId];
         removeNFTFromOwner(_owner, _tokenId);
+
+        emit NFTRemoved(_owner, _tokenId);
     }
 
     /// @notice creates an NFT offer
     /// @param _tokenId Token ID     
     function createOffer(uint256 _tokenId) external payable NFTExists(_tokenId) {
-        require(msg.value > 0, "Price must be greater than zero");
+        require(msg.value > nfts[_tokenId].price, "Offer must be greater than NFT price");
         require(nfts[_tokenId].isListed, "NFT is not listed for sale");
+        require(nfts[_tokenId].owner != msg.sender, "Owner of NFT cannot create an offer");
 
         offersCount++;
         NFTOffer memory newOffer = NFTOffer({
