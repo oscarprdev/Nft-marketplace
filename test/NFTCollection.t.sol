@@ -252,4 +252,52 @@ contract NFTCollectionTest is Test, IERC721Receiver {
         nftCollection.createOffer{ value: 2 ether }(_tokenId);
     }
 
+    /// @notice cancelOffer should cancel an offer
+    function testCancelOffer() external {
+        string memory _uri = "test-uri";
+        uint256 _price = 1 ether;
+        uint256 _tokenId = 1;
+
+        nftCollection.mintNFT(_uri, _price);
+        nftCollection.setNFTAsListed(_tokenId);
+
+        vm.prank(address(0xBEEF));
+        vm.deal(address(0xBEEF), 5 ether);
+        vm.expectEmit(true, true, true, false);
+        emit NFTOfferCreated(address(0xBEEF), _tokenId, 1, 2 ether);
+        nftCollection.createOffer{ value: 2 ether }(_tokenId);
+
+        NFTCollection.NFTOffer memory _offer = nftCollection.getOfferById(1);
+        assertEq(_offer.tokenId, _tokenId);
+        assertEq(_offer.buyer, address(0xBEEF));
+
+        vm.prank(address(0xBEEF));
+        vm.expectEmit(true, false, false, false);
+        emit NFTOfferCanceled(1);
+        nftCollection.cancelOffer(1);
+    }
+
+    /// @notice cancelOffer should revert if offer does not exist
+    function testCancelOffer_OfferDoesNotExist() external {
+        vm.expectRevert(abi.encodeWithSelector(OfferDoesNotExist.selector, 1));
+        nftCollection.cancelOffer(1);
+    }
+
+    /// @notice cancelOffer should revert if sender is not the owner of the offer
+    function testCancelOffer_SenderIsNotOwner() external {
+        string memory _uri = "test-uri";
+        uint256 _price = 1 ether;
+        uint256 _tokenId = 1;
+
+        nftCollection.mintNFT(_uri, _price);
+        nftCollection.setNFTAsListed(_tokenId);
+
+        vm.prank(address(0xBEEF));
+        vm.deal(address(0xBEEF), 5 ether);
+        emit NFTOfferCreated(address(0xBEEF), _tokenId, 1, 2 ether);
+        nftCollection.createOffer{ value: 2 ether }(_tokenId);
+
+        vm.expectRevert("Only buyer can cancel offer");
+        nftCollection.cancelOffer(1);
+    }
 }

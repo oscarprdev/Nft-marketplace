@@ -143,7 +143,7 @@ contract NFTCollection is ERC721URIStorage {
     /// @notice modifier to check if the NFT offer exists    
     /// @param _offerId Offer ID
     modifier NFTOfferExists(uint256 _offerId) {
-        if (offers[_offerId].offerId == 0) {
+        if (_offerId > offersCount || _offerId == 0) {
             revert OfferDoesNotExist(_offerId);
         }
         _;
@@ -248,7 +248,6 @@ contract NFTCollection is ERC721URIStorage {
         NFT memory _nft = nfts[_nftOffer.tokenId];
 
         require(msg.sender == _nftOffer.buyer, "Only buyer can cancel offer");
-        require(_nft.isListed, "Only listed NFT can be canceled");
 
         /// @dev delete offers related with the nft
         delete offersByNftID[_nft.tokenId][_offerId];
