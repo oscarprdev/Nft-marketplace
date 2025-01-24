@@ -550,4 +550,116 @@ contract NFTCollectionTest is Test, IERC721Receiver {
         vm.expectRevert("Limit must be less than total NFTs");
         nftCollection.getOffers(_offset - 1, _limit);
     }
+
+    /// @dev getOfferById should return the offer by id
+    function testGetofferById() external {
+        string memory _uri = "test-uri";
+        uint256 _price = 1 ether;
+        nftCollection.mintNFT(_uri, _price);
+        nftCollection.setNFTAsListed(1);
+
+        vm.prank(address(0xBEEF));
+        vm.deal(address(0xBEEF), 5 ether);
+        nftCollection.createOffer{ value: 2 ether }(1);
+
+        NFTCollection.NFTOffer memory _offer = nftCollection.getOfferById(1);
+        assertEq(_offer.offerId, 1);
+    }
+
+    /// @dev getOfferById should revert if Offer does not exist
+    function testGetOfferById_OfferDoesNotExist() external {
+        vm.expectRevert(abi.encodeWithSelector(OfferDoesNotExist.selector, 1));
+        nftCollection.getOfferById(1);
+    }
+
+    /// @dev getOfferByOwner should return the Offer by owner
+    function getOfferByOwner() external {
+        string memory _uri = "test-uri";
+        uint256 _price = 1 ether;
+        nftCollection.mintNFT(_uri, _price);
+        nftCollection.setNFTAsListed(1);
+
+        vm.prank(address(0xBEEF));
+        vm.deal(address(0xBEEF), 5 ether);
+        nftCollection.createOffer{ value: 2 ether }(1);
+
+        vm.prank(address(0xBEEF));
+        NFTCollection.NFTOffer memory _offer = nftCollection.getOfferByOwner(address(this), 1);
+        assertEq(_offer.offerId, 1);
+    }
+    
+    /// @dev getOfferByOwner should revert if Offer does not exist
+    function testGetOfferByOwner_OfferDoesNotExist() external {
+        vm.expectRevert(abi.encodeWithSelector(OfferDoesNotExist.selector, 1));
+        nftCollection.getOfferByOwner(address(this), 1);
+    }
+
+    /// @dev getAllOffersByOwner should return the Offers by owner
+    function testGetAllOffersByOwner() external {
+        string memory _uri = "test-uri";
+        uint256 _price = 0.5 ether;
+
+        for (uint256 i = 0; i < 3; i++) {
+            nftCollection.mintNFT(_uri, _price);
+        }
+
+        for (uint256 i = 0; i < 3; i++) {
+            nftCollection.setNFTAsListed(i + 1);
+        }
+
+        for (uint256 i = 0; i < 3; i++) {
+            vm.prank(address(0xBEEF));
+            vm.deal(address(0xBEEF), 6 ether);
+            nftCollection.createOffer{ value: 0.7 ether }(i + 1);
+        }
+
+        NFTCollection.NFTOffer[] memory _offers = nftCollection.getAllOffersByOwnerID(address(0xBEEF));
+        assertEq(_offers.length, 3);
+        assertEq(_offers[0].tokenId, 1);
+        assertEq(_offers[1].tokenId, 2);
+        assertEq(_offers[2].tokenId, 3);
+    }
+
+    /// @dev getAllOffersByNft should return the Offers by NFT
+    function testGetAllOffersByNft() external {
+        string memory _uri = "test-uri";
+        uint256 _price = 0.5 ether;
+
+        nftCollection.mintNFT(_uri, _price);
+        nftCollection.setNFTAsListed(1);
+
+        vm.prank(address(0xBEEF));
+        vm.deal(address(0xBEEF), 6 ether);
+        nftCollection.createOffer{ value: 0.7 ether }(1);
+        vm.stopPrank();
+
+        vm.prank(address(0xBAAF));
+        vm.deal(address(0xBAAF), 6 ether);
+        nftCollection.createOffer{ value: 1 ether }(1);
+        vm.stopPrank();
+
+        vm.prank(address(0xBFFF));
+        vm.deal(address(0xBFFF), 6 ether);
+        nftCollection.createOffer{ value: 1.7 ether }(1);
+        vm.stopPrank();
+
+        NFTCollection.NFTOffer[] memory _offers = nftCollection.getAllOffersByNft(1);
+        assertEq(_offers.length, 3);
+        assertEq(_offers[0].tokenId, 1);
+        assertEq(_offers[0].price, 0.7 ether);
+        assertEq(_offers[0].buyer, address(0xBEEF));
+
+        assertEq(_offers[1].tokenId, 1);
+        assertEq(_offers[1].price, 1 ether);
+        assertEq(_offers[1].buyer, address(0xBAAF));
+
+        assertEq(_offers[2].tokenId, 1);
+        assertEq(_offers[2].price, 1.7 ether);
+        assertEq(_offers[2].buyer, address(0xBFFF));
+    }
+
+    function testGetAllOffersByNft_NFTDoesNotExist() external {
+        vm.expectRevert(abi.encodeWithSelector(NFTDoesNotExist.selector, 1));
+        nftCollection.getAllOffersByNft(1);
+    }
 }

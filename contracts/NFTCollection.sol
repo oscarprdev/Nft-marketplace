@@ -231,6 +231,7 @@ contract NFTCollection is ERC721URIStorage {
         offersByOwnerID[msg.sender][offersCount] = newOffer;
         offersByNftID[_tokenId][offersCount] = newOffer;
         offersIDsByOwnerID[msg.sender].push(offersCount);
+        offersIdsByNFTID[_tokenId].push(offersCount);
 
         emit NFTOfferCreated(
             msg.sender, 
@@ -385,7 +386,7 @@ contract NFTCollection is ERC721URIStorage {
     /// @param _owner Owner address
     /// @param _offerId Offer ID
     /// @return offer Offer
-    function getOfferByOwner(address _owner, uint256 _offerId) external view returns (NFTOffer memory) {
+    function getOfferByOwner(address _owner, uint256 _offerId) external view NFTOfferExists(_offerId) returns (NFTOffer memory) {
         return offersByOwnerID[_owner][_offerId];
     }
 
@@ -407,7 +408,7 @@ contract NFTCollection is ERC721URIStorage {
     /// @notice gets all offers by NFT
     /// @param _tokenId Token ID
     /// @return offers Offers   
-    function getAllOffersByNft(uint256 _tokenId) external view returns (NFTOffer[] memory) {
+    function getAllOffersByNft(uint256 _tokenId) external view NFTExists(_tokenId) returns (NFTOffer[] memory) {
         uint256[] memory _offerIDs = offersIdsByNFTID[_tokenId];
         uint256 _length = _offerIDs.length;
         NFTOffer[] memory _offers = new NFTOffer[](_length);
