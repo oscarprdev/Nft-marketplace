@@ -14,15 +14,13 @@ hardhat_test-gas:
 hardhat_node:
 	$(HARDHAT) node
 
-hardhat_deploy_local:
+hardhat_deploy:
 	rm -rf ./artifacts
 	rm -rf ./cache
 	rm -rf ./contracts/NFTCollection.json
-	npx hardhat ignition deploy ./ignition/modules/NFTCollection.ts --network localhost
+	rm -rf ./ignition/deployments
+	npx hardhat ignition deploy ./ignition/modules/NFTCollection.ts --network $(network)
 	mv ./artifacts/contracts/NFTCollection.sol/NFTCollection.json ./contracts
-
-hardhat_deploy:
-	npx hardhat ignition deploy ./ignition/modules/NFTCollection.ts --network sepolia
 
 hardhat_test:
 	$(HARDHAT) test
