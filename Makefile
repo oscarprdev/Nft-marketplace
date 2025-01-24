@@ -19,8 +19,8 @@ hardhat_deploy:
 	rm -rf ./artifacts
 	rm -rf ./cache
 	rm -rf ./contracts/NFTCollection.json
-	npx hardhat ignition deploy ./ignition/modules/NFTMarketplace.ts --network localhost
-	mv ./artifacts/contracts/NFTMarketplace.sol/NFTCollection.json ./contracts
+	npx hardhat ignition deploy ./ignition/modules/NFTCollection.ts --network localhost
+	mv ./artifacts/contracts/NFTCollection.sol/NFTCollection.json ./contracts
 
 hardhat_test:
 	$(HARDHAT) test
