@@ -134,7 +134,7 @@ contract NFTCollection is ERC721URIStorage {
     /// @notice modifier to check if the NFT exists
     /// @param _tokenId Token ID
     modifier NFTExists(uint256 _tokenId) {
-        if (_tokenId > NFTTokenIdCounter || _tokenId == 0) {
+        if (_tokenId > NFTTokenIdCounter || _tokenId == 0 ) {
             revert NFTDoesNotExist(_tokenId);
         }
         _;
@@ -143,7 +143,7 @@ contract NFTCollection is ERC721URIStorage {
     /// @notice modifier to check if the NFT offer exists    
     /// @param _offerId Offer ID
     modifier NFTOfferExists(uint256 _offerId) {
-        if (_offerId > offersCount || _offerId == 0) {
+        if (_offerId > offersCount || _offerId == 0 ) {
             revert OfferDoesNotExist(_offerId);
         }
         _;
@@ -316,14 +316,27 @@ contract NFTCollection is ERC721URIStorage {
         require(_limit > _offset, "Limit must be greater than offset");
         require(_limit <= NFTTokenIdCounter, "Limit must be less than total NFTs");
 
-        uint256 _length = _limit - _offset + 1;
-        NFT[] memory _nfts = new NFT[](_length);
-
-        for (uint256 i = 0; i < _length; i++) {
-            _nfts[i] = nfts[_offset + i];
+        uint256 validCount = 0;
+        for (uint256 i = _offset; i <= _limit; i++) {
+            if (nfts[i].tokenId != 0) { 
+                validCount++;
+            }
         }
 
-        return _nfts;
+        if (validCount == 0) {
+            return new NFT[](0); 
+        }
+
+        NFT[] memory _filteredNFTs = new NFT[](validCount);
+        uint256 _currentIndex = 0;
+        for (uint256 i = _offset; i <= _limit; i++) {
+            if (nfts[i].tokenId != 0) {
+                _filteredNFTs[_currentIndex] = nfts[i];
+                _currentIndex++;
+            }
+        }
+
+        return _filteredNFTs;
     }
 
     /// @notice gets an NFT by ID
@@ -365,14 +378,27 @@ contract NFTCollection is ERC721URIStorage {
         require(_limit > _offset, "Limit must be greater than offset");
         require(_limit <= offersCount, "Limit must be less than total NFTs");
 
-        uint256 _length = _limit - _offset + 1;
-        NFTOffer[] memory _offers = new NFTOffer[](_length);
-
-        for (uint256 i = 0; i < _length; i++) {
-            _offers[i] = offers[_offset + i];
+        uint256 validCount = 0;
+        for (uint256 i = _offset; i <= _limit; i++) {
+            if (offers[i].offerId != 0) { 
+                validCount++;
+            }
         }
 
-        return _offers;
+        if (validCount == 0) {
+            return new NFTOffer[](0); 
+        }
+
+        NFTOffer[] memory _filteredOffers = new NFTOffer[](validCount);
+        uint256 _currentIndex = 0;
+        for (uint256 i = _offset; i <= _limit; i++) {
+            if (offers[i].offerId != 0) {
+                _filteredOffers[_currentIndex] = offers[i];
+                _currentIndex++;
+            }
+        }
+
+        return _filteredOffers;
     }
 
     /// @notice gets an NFT offer by ID

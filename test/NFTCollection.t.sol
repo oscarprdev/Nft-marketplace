@@ -658,6 +658,7 @@ contract NFTCollectionTest is Test, IERC721Receiver {
         assertEq(_offers[2].buyer, address(0xBFFF));
     }
 
+    /// @dev getAllOffersByNft should revert if NFT does not exist
     function testGetAllOffersByNft_NFTDoesNotExist() external {
         vm.expectRevert(abi.encodeWithSelector(NFTDoesNotExist.selector, 1));
         nftCollection.getAllOffersByNft(1);
